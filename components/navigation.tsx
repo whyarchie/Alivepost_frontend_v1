@@ -53,7 +53,7 @@ export function Navigation() {
   }, [])
 
   const scrollToSection = (id: string) => {
-    const element = document.querySelector(id)
+    const element = document.querySelector(id) as HTMLElement
     if (element && lenis) {
       lenis.scrollTo(element, { offset: -100 })
     }
@@ -73,9 +73,8 @@ export function Navigation() {
       initial={{ y: -100 }}
       animate={{ y: 0 }}
       transition={{ type: "spring", stiffness: 100, damping: 20 }}
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
-        scrolled ? "bg-[#121212]/95 backdrop-blur-md border-b border-white/10" : "bg-transparent"
-      }`}
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${scrolled ? "bg-white/90 dark:bg-[#121212]/80 backdrop-blur-2xl saturate-150 border-b border-slate-200 dark:border-white/10 shadow-sm" : "bg-transparent"
+        }`}
     >
       <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2">
@@ -86,10 +85,10 @@ export function Navigation() {
           >
             <span className={scrolled ? "text-white" : "text-[#121212]"}>Alive</span>
             <motion.span
-              className="text-blue-600"
+              className="text-green-600"
               animate={{
                 textShadow: scrolled
-                  ? ["0 0 10px rgba(37,99,235,0.5)", "0 0 20px rgba(37,99,235,0.8)", "0 0 10px rgba(37,99,235,0.5)"]
+                  ? ["0 0 10px rgba(22,163,74,0.5)", "0 0 20px rgba(22,163,74,0.8)", "0 0 10px rgba(22,163,74,0.5)"]
                   : "none",
               }}
               transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY }}
@@ -104,9 +103,8 @@ export function Navigation() {
             <motion.button
               key={item.label}
               onClick={() => scrollToSection(item.href)}
-              className={`text-sm font-medium tracking-wide transition-colors relative ${
-                scrolled ? "text-white/80 hover:text-[#AFFF00]" : "text-[#121212]/80 hover:text-[#121212]"
-              }`}
+              className={`text-sm font-medium tracking-wide transition-colors relative ${scrolled ? "text-slate-900 hover:text-green-600 dark:text-white/80 dark:hover:text-[#AFFF00]" : "text-[#121212]/80 hover:text-[#121212]"
+                }`}
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.1, duration: 0.4, ease: [0.25, 0.4, 0.25, 1] }}
@@ -125,7 +123,7 @@ export function Navigation() {
         </div>
 
         <motion.button
-          className="hidden md:block bg-blue-600 text-white px-6 py-2.5 rounded-full font-bold text-sm tracking-wide relative overflow-hidden"
+          className="hidden md:block bg-green-600 text-white px-6 py-2.5 rounded-full font-bold text-sm tracking-wide relative overflow-hidden"
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           transition={{ type: "spring", stiffness: 400, damping: 17 }}
@@ -134,9 +132,9 @@ export function Navigation() {
             className="absolute inset-0 bg-white/30"
             animate={{
               boxShadow: [
-                "0 0 20px rgba(37,99,235,0.3)",
-                "0 0 40px rgba(37,99,235,0.6)",
-                "0 0 20px rgba(37,99,235,0.3)",
+                "0 0 20px rgba(22,163,74,0.3)",
+                "0 0 40px rgba(22,163,74,0.6)",
+                "0 0 20px rgba(22,163,74,0.3)",
               ],
             }}
             transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut" }}
@@ -163,7 +161,7 @@ export function Navigation() {
                 exit={{ rotate: 90, opacity: 0 }}
                 transition={{ duration: 0.2 }}
               >
-                <X className={scrolled ? "text-white" : "text-[#121212]"} />
+                <X className={scrolled ? "text-slate-900 dark:text-white" : "text-[#121212]"} />
               </motion.div>
             ) : (
               <motion.div
@@ -173,7 +171,7 @@ export function Navigation() {
                 exit={{ rotate: -90, opacity: 0 }}
                 transition={{ duration: 0.2 }}
               >
-                <Menu className={scrolled ? "text-white" : "text-[#121212]"} />
+                <Menu className={scrolled ? "text-slate-900 dark:text-white" : "text-[#121212]"} />
               </motion.div>
             )}
           </AnimatePresence>
@@ -187,14 +185,14 @@ export function Navigation() {
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.3, ease: [0.25, 0.4, 0.25, 1] }}
-            className="md:hidden bg-[#121212]/95 backdrop-blur-md border-t border-white/10 overflow-hidden"
+            className="md:hidden bg-white/95 dark:bg-[#121212]/95 backdrop-blur-2xl saturate-150 border-t border-slate-200 dark:border-white/10 overflow-hidden shadow-lg"
           >
             <div className="px-6 py-4 space-y-4">
               {navLinks.map((item, i) => (
                 <motion.button
                   key={item.label}
                   onClick={() => scrollToSection(item.href)}
-                  className="block w-full text-left text-white/80 hover:text-[#AFFF00] text-lg font-medium py-2"
+                  className="block w-full text-left text-slate-900 hover:text-green-600 dark:text-white/80 dark:hover:text-[#AFFF00] text-lg font-medium py-2"
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: i * 0.1 }}
@@ -203,7 +201,7 @@ export function Navigation() {
                 </motion.button>
               ))}
               <motion.button
-                className="w-full bg-blue-600 text-white px-6 py-3 rounded-full font-bold text-sm tracking-wide mt-4"
+                className="w-full bg-green-600 text-white px-6 py-3 rounded-full font-bold text-sm tracking-wide mt-4"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3 }}

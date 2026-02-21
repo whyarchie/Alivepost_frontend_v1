@@ -11,7 +11,7 @@ const fadeUpVariants = {
     transition: {
       delay: i * 0.1,
       duration: 0.8,
-      ease: [0.25, 0.4, 0.25, 1],
+      ease: "easeOut" as const,
     },
   }),
 }
@@ -51,7 +51,7 @@ export function ValuePropSection() {
   ]
 
   return (
-    <section id="value" className="py-24 bg-gradient-to-b from-white to-blue-50 px-4">
+    <section id="value" className="py-24 bg-gradient-to-b from-white to-green-50 px-4">
       <div className="max-w-7xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 40 }}
@@ -79,19 +79,19 @@ export function ValuePropSection() {
                 whileInView="visible"
                 viewport={{ once: true }}
                 custom={i}
-                className="bg-gradient-to-br from-blue-50 to-white rounded-2xl p-8 border border-blue-100 shadow-lg hover:shadow-xl transition-all"
+                className="bg-gradient-to-br from-green-50 to-white rounded-2xl p-8 border border-green-100 shadow-lg hover:shadow-xl transition-all"
               >
                 <div className="mb-4">
                   <IconComponent />
                 </div>
-                <div className="text-sm font-bold text-blue-600 uppercase tracking-wider mb-2">
+                <div className="text-sm font-bold text-green-600 uppercase tracking-wider mb-2">
                   {stakeholder.title}
                 </div>
                 <h3 className="text-2xl font-bold text-slate-900 mb-6">{stakeholder.heading}</h3>
                 <ul className="space-y-3">
                   {stakeholder.benefits.map((benefit, j) => (
                     <li key={j} className="flex items-start gap-3">
-                      <div className="w-2 h-2 bg-blue-600 rounded-full mt-2 flex-shrink-0"></div>
+                      <div className="w-2 h-2 bg-green-600 rounded-full mt-2 flex-shrink-0"></div>
                       <span className="text-slate-600">{benefit}</span>
                     </li>
                   ))}

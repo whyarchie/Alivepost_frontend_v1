@@ -10,7 +10,7 @@ const fadeUpVariants = {
     transition: {
       delay: i * 0.1,
       duration: 0.8,
-      ease: [0.25, 0.4, 0.25, 1],
+      ease: "easeOut" as const,
     },
   }),
 }
@@ -54,9 +54,9 @@ export function ProblemsSection() {
               whileInView="visible"
               viewport={{ once: true }}
               custom={i}
-              className="bg-white rounded-2xl p-8 border border-blue-100 shadow-lg hover:shadow-xl transition-shadow"
+              className="bg-white rounded-2xl p-8 border border-green-100 shadow-lg hover:shadow-xl transition-shadow"
             >
-              <div className="text-5xl font-black text-blue-600 mb-4">{problem.stat}</div>
+              <div className="text-5xl font-black text-green-600 mb-4">{problem.stat}</div>
               <p className="text-lg text-slate-600">{problem.description}</p>
             </motion.div>
           ))}

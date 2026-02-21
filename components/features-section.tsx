@@ -44,7 +44,7 @@ export function FeaturesSection() {
                 initial={{ opacity: 0, x: -20 }}
                 whileInView={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.8, delay: i * 0.1 }}
-                className="bg-gradient-to-br from-blue-50 to-white rounded-2xl p-8 border border-blue-100 shadow-lg hover:shadow-xl transition-all"
+                className="bg-gradient-to-br from-green-50 to-white rounded-2xl p-8 border border-green-100 shadow-lg hover:shadow-xl transition-all"
               >
                 <div className="mb-4">
                   <IconComponent />

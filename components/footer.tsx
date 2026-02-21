@@ -21,7 +21,7 @@ const itemVariants = {
     opacity: 1,
     y: 0,
     transition: {
-      type: "spring",
+      type: "spring" as const,
       stiffness: 100,
       damping: 20,
     },
@@ -80,7 +80,7 @@ export function Footer() {
               READY TO TRANSFORM
             </motion.span>
             <motion.span
-              className="block text-blue-400"
+              className="block text-green-400"
               initial={{ y: 100 }}
               whileInView={{ y: 0 }}
               viewport={{ once: true }}
@@ -114,7 +114,7 @@ export function Footer() {
               />
             </motion.div>
             <motion.button
-              className="bg-blue-600 text-white px-6 py-3 rounded-xl font-bold text-sm tracking-wide whitespace-nowrap relative overflow-hidden"
+              className="bg-green-600 text-white px-6 py-3 rounded-xl font-bold text-sm tracking-wide whitespace-nowrap relative overflow-hidden"
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               transition={{ type: "spring", stiffness: 400, damping: 17 }}
@@ -199,7 +199,7 @@ export function Footer() {
           >
             <span className="text-xl font-black">
               <span className="text-white">Alive</span>
-              <span className="text-blue-400">Post</span>
+              <span className="text-green-400">Post</span>
             </span>
           </motion.div>
 
@@ -212,15 +212,15 @@ export function Footer() {
             animate={
               isHovering
                 ? {
-                    rotate: [0, -5, 5, -5, 5, 0],
-                    scale: [1, 1.1, 1],
-                    color: "#60a5fa",
-                  }
+                  rotate: [0, -5, 5, -5, 5, 0],
+                  scale: [1, 1.1, 1],
+                  color: "#60a5fa",
+                }
                 : {
-                    rotate: 0,
-                    scale: 1,
-                    color: "rgba(255,255,255,0.3)",
-                  }
+                  rotate: 0,
+                  scale: 1,
+                  color: "rgba(255,255,255,0.3)",
+                }
             }
             transition={{ duration: 0.5 }}
           >

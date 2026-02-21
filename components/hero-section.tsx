@@ -2,7 +2,108 @@
 
 import { motion } from "framer-motion"
 import { useRef } from "react"
-import Image from "next/image"
+// Removing next/image as we're replacing the image with an SVG component
+
+const AIPatientRecoverySVG = () => {
+  return (
+    <motion.svg width="350" height="400" viewBox="0 0 350 400" fill="none" xmlns="http://www.w3.org/2000/svg" className="drop-shadow-2xl">
+      {/* Background Glow */}
+      <motion.circle
+        cx="175" cy="200" r="140"
+        fill="url(#glowGradient)"
+        initial={{ opacity: 0, scale: 0.8 }}
+        animate={{ opacity: 0.6, scale: 1 }}
+        transition={{ duration: 2, ease: "easeOut" }}
+      />
+      <defs>
+        <radialGradient id="glowGradient" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="rgba(22, 163, 74, 0.15)" />
+          <stop offset="100%" stopColor="rgba(22, 163, 74, 0)" />
+        </radialGradient>
+      </defs>
+
+      {/* Main Dashboard Panel */}
+      <motion.rect
+        x="40" y="80" width="270" height="240" rx="16"
+        fill="white" stroke="#e2e8f0" strokeWidth="2"
+        initial={{ y: 50, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.8, ease: "easeOut" }}
+      />
+
+      {/* Dashboard Header Bar */}
+      <motion.rect x="42" y="82" width="266" height="50" rx="14" fill="#f8fafc" />
+      <circle cx="70" cy="107" r="14" fill="#dcfce7" />
+      <path d="M65 107 H75 M70 102 V112" stroke="#16a34a" strokeWidth="2" strokeLinecap="round" />
+      <rect x="95" y="100" width="80" height="6" rx="3" fill="#cbd5e1" />
+      <rect x="95" y="112" width="50" height="4" rx="2" fill="#e2e8f0" />
+      <motion.circle cx="280" cy="107" r="4" fill="#ef4444" animate={{ opacity: [1, 0.2, 1] }} transition={{ duration: 1.5, repeat: Number.POSITIVE_INFINITY }} />
+
+      {/* Hero Heartbeat Monitor Sub-panel */}
+      <motion.rect x="60" y="145" width="230" height="90" rx="12" fill="#0f172a"
+        initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ duration: 0.6, delay: 0.4 }} style={{ originX: 0.5 }} />
+      <motion.path
+        d="M60 190 H100 L115 160 L140 220 L160 150 L180 210 L195 190 H290"
+        stroke="#10b981" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" fill="none"
+        initial={{ pathLength: 0 }}
+        animate={{ pathLength: 1 }}
+        transition={{ duration: 2.5, ease: "linear", repeat: Number.POSITIVE_INFINITY }}
+      />
+      {/* Monitor Grid Lines */}
+      <path d="M60 160 H290 M60 175 H290 M60 205 H290 M60 220 H290" stroke="rgba(255,255,255,0.05)" strokeWidth="1" />
+      <path d="M100 145 V235 M140 145 V235 M180 145 V235 M220 145 V235 M260 145 V235" stroke="rgba(255,255,255,0.05)" strokeWidth="1" />
+
+      {/* AI Risk Score Badges */}
+      <motion.g initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.6, delay: 0.8 }}>
+        <rect x="60" y="250" width="110" height="45" rx="8" fill="#f0fdf4" stroke="#bbf7d0" strokeWidth="1" />
+        <rect x="75" y="262" width="20" height="20" rx="4" fill="#22c55e" />
+        <path d="M80 272 L83 275 L90 268" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+        <text x="105" y="271" fontSize="10" fill="#64748b" fontWeight="600" fontFamily="sans-serif">Risk Score</text>
+        <text x="105" y="283" fontSize="12" fill="#0ea5e9" fontWeight="bold" fontFamily="sans-serif">LOW</text>
+      </motion.g>
+
+      <motion.g initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.6, delay: 1.0 }}>
+        <rect x="180" y="250" width="110" height="45" rx="8" fill="#f8fafc" stroke="#e2e8f0" strokeWidth="1" />
+        <circle cx="195" cy="272" r="10" fill="#e0f2fe" />
+        <path d="M195 266 V274 M191 270 H199" stroke="#0ea5e9" strokeWidth="2" strokeLinecap="round" />
+        <text x="215" y="271" fontSize="10" fill="#64748b" fontWeight="600" fontFamily="sans-serif">Adherence</text>
+        <text x="215" y="283" fontSize="12" fill="#10b981" fontWeight="bold" fontFamily="sans-serif">98%</text>
+      </motion.g>
+
+      {/* Floating AI Notification Card 1 */}
+      <motion.g
+        initial={{ x: -50, opacity: 0 }}
+        animate={{ x: 0, opacity: 1, y: [0, -10, 0] }}
+        transition={{ duration: 0.8, delay: 1.2, y: { duration: 4, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut" } }}>
+        <rect x="10" y="50" width="150" height="55" rx="12" fill="white" stroke="#e2e8f0" strokeWidth="1" style={{ filter: "drop-shadow(0 10px 15px rgba(0,0,0,0.1))" }} />
+        <circle cx="35" cy="77" r="12" fill="#3b82f6" />
+        <path d="M30 77 L35 82 L42 72" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+        <rect x="55" y="68" width="80" height="6" rx="3" fill="#cbd5e1" />
+        <rect x="55" y="80" width="50" height="4" rx="2" fill="#e2e8f0" />
+      </motion.g>
+
+      {/* Floating AI Notification Card 2 */}
+      <motion.g
+        initial={{ x: 50, opacity: 0 }}
+        animate={{ x: 0, opacity: 1, y: [0, 10, 0] }}
+        transition={{ duration: 0.8, delay: 1.4, y: { duration: 5, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut" } }}>
+        <rect x="220" y="280" width="120" height="55" rx="12" fill="white" stroke="#e2e8f0" strokeWidth="1" style={{ filter: "drop-shadow(0 10px 15px rgba(0,0,0,0.1))" }} />
+        <circle cx="245" cy="307" r="12" fill="#f59e0b" />
+        <path d="M245 301 V309 M245 313 A0.5 0.5 0 1 1 245 313.1" stroke="white" strokeWidth="2" strokeLinecap="round" />
+        <rect x="265" y="298" width="55" height="6" rx="3" fill="#cbd5e1" />
+        <rect x="265" y="310" width="35" height="4" rx="2" fill="#e2e8f0" />
+      </motion.g>
+
+      {/* Animating Data Particles/Sparks connecting UI */}
+      <motion.circle cx="175" cy="320" r="4" fill="#10b981"
+        initial={{ y: 320, opacity: 0 }} animate={{ y: 295, opacity: [0, 1, 0] }} transition={{ duration: 1.5, repeat: Number.POSITIVE_INFINITY, delay: 1 }} />
+      <motion.circle cx="160" cy="320" r="3" fill="#10b981"
+        initial={{ y: 320, opacity: 0 }} animate={{ y: 295, opacity: [0, 1, 0] }} transition={{ duration: 1.2, repeat: Number.POSITIVE_INFINITY, delay: 1.5 }} />
+      <motion.circle cx="190" cy="320" r="2.5" fill="#10b981"
+        initial={{ y: 320, opacity: 0 }} animate={{ y: 295, opacity: [0, 1, 0] }} transition={{ duration: 1.8, repeat: Number.POSITIVE_INFINITY, delay: 0.8 }} />
+    </motion.svg>
+  );
+}
 
 
 
@@ -106,7 +207,7 @@ export function HeroSection() {
                   initial="hidden"
                   animate="visible"
                   custom={2}
-                  className="inline-block text-blue-600"
+                  className="inline-block text-green-600"
                 >
                   BEYOND DISCHARGE
                 </motion.span>
@@ -130,7 +231,7 @@ export function HeroSection() {
               className="flex flex-wrap gap-3 pt-2"
             >
               <motion.button
-                className="bg-blue-600 text-white px-6 py-3 rounded-full font-bold text-sm tracking-wide flex items-center gap-2 group relative overflow-hidden"
+                className="bg-green-600 text-white px-6 py-3 rounded-full font-bold text-sm tracking-wide flex items-center gap-2 group relative overflow-hidden"
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 transition={{ type: "spring", stiffness: 400, damping: 17 }}
@@ -178,7 +279,7 @@ export function HeroSection() {
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.8 + i * 0.1 }}
                 >
-                  <div className="w-1.5 h-1.5 bg-blue-600 rounded-full" />
+                  <div className="w-1.5 h-1.5 bg-green-600 rounded-full" />
                   {benefit}
                 </motion.div>
               ))}
@@ -207,14 +308,7 @@ export function HeroSection() {
                   ease: "easeInOut",
                 }}
               >
-                <Image
-                  src="/images/drink2.png"
-                  alt="GiGi Energy Drink - Lemon Lime Flavour"
-                  width={350}
-                  height={525}
-                  className="relative z-10 drop-shadow-2xl"
-                  priority
-                />
+                <AIPatientRecoverySVG />
               </motion.div>
             </motion.div>
           </motion.div>

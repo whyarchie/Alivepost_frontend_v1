@@ -11,7 +11,7 @@ const fadeUpVariants = {
     transition: {
       delay: i * 0.1,
       duration: 0.8,
-      ease: [0.25, 0.4, 0.25, 1],
+      ease: "easeOut" as const,
     },
   }),
 }
@@ -64,7 +64,7 @@ export function SolutionSection() {
                 whileInView="visible"
                 viewport={{ once: true }}
                 custom={i}
-                className="bg-gradient-to-br from-blue-50 to-white rounded-2xl p-8 border border-blue-200 hover:border-blue-400 transition-all hover:shadow-xl"
+                className="bg-gradient-to-br from-green-50 to-white rounded-2xl p-8 border border-green-200 hover:border-green-400 transition-all hover:shadow-xl"
               >
                 <div className="mb-4">
                   <IconComponent />

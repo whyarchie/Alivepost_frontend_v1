@@ -2,36 +2,27 @@
 
 import { motion } from 'framer-motion'
 import { BellIcon, DatabaseIcon, BarChartIcon } from './icons'
-
-const fadeUpVariants = {
-  hidden: { opacity: 0, y: 40 },
-  visible: (i: number) => ({
-    opacity: 1,
-    y: 0,
-    transition: {
-      delay: i * 0.1,
-      duration: 0.8,
-      ease: "easeOut" as const,
-    },
-  }),
-}
+import { BentoGrid, BentoGridItem } from './ui/bento-grid'
 
 export function SolutionSection() {
   const solutions = [
     {
       title: 'Enhanced Follow-up',
-      description: 'AI-powered daily check-ins with risk scoring to identify deteriorating patients before readmission',
-      icon: BellIcon,
+      description: 'AI-powered daily check-ins with risk scoring to identify deteriorating patients before readmission.',
+      header: <div className="flex flex-1 w-full h-full min-h-[6rem] rounded-xl bg-gradient-to-br from-green-100 to-green-50 justify-center items-center"><BellIcon /></div>,
+      className: "md:col-span-2",
     },
     {
       title: 'Home Care & Pharmacy',
-      description: 'Predictive medication refills and doorstep delivery ensuring 100% adherence to prescriptions',
-      icon: DatabaseIcon,
+      description: 'Predictive medication refills and doorstep delivery ensuring 100% adherence to prescriptions.',
+      header: <div className="flex flex-1 w-full h-full min-h-[6rem] rounded-xl bg-gradient-to-br from-blue-100 to-blue-50 justify-center items-center"><DatabaseIcon /></div>,
+      className: "md:col-span-1",
     },
     {
       title: 'Real-time Visibility',
-      description: 'Clinical alert engine triggering proactive outreach from hospital care teams',
-      icon: BarChartIcon,
+      description: 'Clinical alert engine triggering proactive outreach from hospital care teams.',
+      header: <div className="flex flex-1 w-full h-full min-h-[6rem] rounded-xl bg-gradient-to-br from-emerald-100 to-emerald-50 justify-center items-center"><BarChartIcon /></div>,
+      className: "md:col-span-3",
     },
   ]
 
@@ -53,28 +44,17 @@ export function SolutionSection() {
           </p>
         </motion.div>
 
-        <div className="grid md:grid-cols-3 gap-8">
-          {solutions.map((solution, i) => {
-            const IconComponent = solution.icon
-            return (
-              <motion.div
-                key={i}
-                variants={fadeUpVariants}
-                initial="hidden"
-                whileInView="visible"
-                viewport={{ once: true }}
-                custom={i}
-                className="bg-gradient-to-br from-green-50 to-white rounded-2xl p-8 border border-green-200 hover:border-green-400 transition-all hover:shadow-xl"
-              >
-                <div className="mb-4">
-                  <IconComponent />
-                </div>
-                <h3 className="text-2xl font-bold text-slate-900 mb-3">{solution.title}</h3>
-                <p className="text-slate-600 leading-relaxed">{solution.description}</p>
-              </motion.div>
-            )
-          })}
-        </div>
+        <BentoGrid className="max-w-4xl mx-auto">
+          {solutions.map((item, i) => (
+            <BentoGridItem
+              key={i}
+              title={item.title}
+              description={item.description}
+              header={item.header}
+              className={item.className}
+            />
+          ))}
+        </BentoGrid>
       </div>
     </section>
   )

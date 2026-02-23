@@ -1,30 +1,22 @@
 'use client'
 
 import { motion } from 'framer-motion'
-
-const fadeUpVariants = {
-  hidden: { opacity: 0, y: 40 },
-  visible: (i: number) => ({
-    opacity: 1,
-    y: 0,
-    transition: {
-      delay: i * 0.1,
-      duration: 0.8,
-      ease: "easeOut" as const,
-    },
-  }),
-}
+import { HoverEffect } from './ui/card-hover-effect'
 
 export function ProblemsSection() {
   const problems = [
     {
       stat: '60%',
-      description: 'of patients fail to follow full prescription instructions',
+      description: 'of patients fail to follow full prescription instructions post-discharge',
     },
     {
       stat: '18%',
       description: 'unplanned readmission rate due to missed medicines and ignored symptoms',
     },
+    {
+      stat: '$52B',
+      description: 'annual cost to the healthcare system due to preventable readmissions',
+    }
   ]
 
   return (
@@ -45,22 +37,7 @@ export function ProblemsSection() {
           </p>
         </motion.div>
 
-        <div className="grid md:grid-cols-2 gap-8">
-          {problems.map((problem, i) => (
-            <motion.div
-              key={i}
-              variants={fadeUpVariants}
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true }}
-              custom={i}
-              className="bg-white rounded-2xl p-8 border border-green-100 shadow-lg hover:shadow-xl transition-shadow"
-            >
-              <div className="text-5xl font-black text-green-600 mb-4">{problem.stat}</div>
-              <p className="text-lg text-slate-600">{problem.description}</p>
-            </motion.div>
-          ))}
-        </div>
+        <HoverEffect items={problems} />
       </div>
     </section>
   )

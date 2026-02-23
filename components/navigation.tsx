@@ -5,6 +5,8 @@ import { motion, AnimatePresence } from "framer-motion"
 import Link from "next/link"
 import { useLenis } from "lenis/react"
 import { Menu, X } from "lucide-react"
+import Image from "next/image"
+import Logo from "../public/logo.svg"
 
 const linkVariants = {
   hidden: { opacity: 0, y: -10 },
@@ -83,18 +85,7 @@ export function Navigation() {
             whileHover={{ scale: 1.05 }}
             transition={{ type: "spring", stiffness: 400, damping: 17 }}
           >
-            <span className={scrolled ? "text-white" : "text-[#121212]"}>Alive</span>
-            <motion.span
-              className="text-green-600"
-              animate={{
-                textShadow: scrolled
-                  ? ["0 0 10px rgba(22,163,74,0.5)", "0 0 20px rgba(22,163,74,0.8)", "0 0 10px rgba(22,163,74,0.5)"]
-                  : "none",
-              }}
-              transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY }}
-            >
-              Post
-            </motion.span>
+            <Image src={Logo} alt="Logo" width={200} height={200} />
           </motion.span>
         </Link>
 

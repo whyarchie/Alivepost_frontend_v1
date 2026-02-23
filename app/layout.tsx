@@ -17,10 +17,10 @@ const _jetbrainsMono = JetBrains_Mono({
 })
 
 export const metadata: Metadata = {
-  title: "GiGi Energy Drink | Dream Big, Drink GiGi",
-  description: "Zero sugar, 75mg caffeine, 100% natural flavors. The energy drink for dreamers and doers.",
-  keywords: ["energy drink", "zero sugar", "natural energy", "GiGi", "caffeine"],
-    generator: 'v0.app'
+  title: "Alivepost | AI-Powered Healthcare",
+  description: "Alivepost is an AI-powered healthcare platform that helps you stay connected with your doctor and manage your health.",
+  keywords: ["Alivepost", "AI-Powered Healthcare", "Post-discharge care", "Healthcare", "Alivepost AI", "Alivepost Healthcare"],
+  generator: 'Alivepost'
 }
 
 export const viewport: Viewport = {

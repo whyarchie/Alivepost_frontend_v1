@@ -11,7 +11,10 @@ import { HoverBorderGradient } from "@/components/ui/hover-border-gradient"
 import { motion } from "framer-motion"
 import Image from "next/image"
 import Link from "next/link"
-
+import about1 from "@/public/about1.jpg"
+import about2 from "@/public/about2.jpg"
+import about3 from "@/public/about3.avif"
+import about4 from "@/public/about4.jpg"
 const values = [
     {
         title: "Patient-First",
@@ -66,25 +69,41 @@ const impactItems = [
     {
         title: "10,000+ Patients Monitored",
         description: "Continuously tracked after discharge, reducing readmission rates by 30%.",
-        header: <div className="flex flex-1 w-full h-full min-h-[6rem] rounded-xl bg-gradient-to-br from-green-300 to-green-100" />,
+        header: (
+            <div className="flex flex-1 w-full h-full min-h-[6rem] rounded-xl overflow-hidden relative">
+                <Image src={about1} alt="10,000+ Patients Monitored" fill className="object-cover" />
+            </div>
+        ),
         className: "md:col-span-2",
     },
     {
         title: "24/7 AI Assistance",
         description: "Our AI systems process health queries round the clock.",
-        header: <div className="flex flex-1 w-full h-full min-h-[6rem] rounded-xl bg-gradient-to-br from-emerald-300 to-emerald-100" />,
+        header: (
+            <div className="flex flex-1 w-full h-full min-h-[6rem] rounded-xl overflow-hidden relative">
+                <Image src={about2} alt="24/7 AI Assistance" fill className="object-cover" />
+            </div>
+        ),
         className: "md:col-span-1",
     },
     {
         title: "Zero Setup Cost",
         description: "Hospitals embed our solution directly into their workflow.",
-        header: <div className="flex flex-1 w-full h-full min-h-[6rem] rounded-xl bg-gradient-to-br from-teal-300 to-teal-100" />,
+        header: (
+            <div className="flex flex-1 w-full h-full min-h-[6rem] rounded-xl overflow-hidden relative">
+                <Image src={about3} alt="Zero Setup Cost" fill className="object-cover" />
+            </div>
+        ),
         className: "md:col-span-1",
     },
     {
         title: "Real-time Alerts",
         description: "Detecting anomalies instantly and routing alerts to the right medical staff.",
-        header: <div className="flex flex-1 w-full h-full min-h-[6rem] rounded-xl bg-gradient-to-br from-cyan-300 to-cyan-100" />,
+        header: (
+            <div className="flex flex-1 w-full h-full min-h-[6rem] rounded-xl overflow-hidden relative">
+                <Image src={about4} alt="Real-time Alerts" fill className="object-cover" />
+            </div>
+        ),
         className: "md:col-span-2",
     },
 ]

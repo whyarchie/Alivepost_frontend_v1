@@ -41,16 +41,22 @@ export function FeaturesSection() {
             return (
               <motion.div
                 key={i}
-                initial={{ opacity: 0, x: -20 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.8, delay: i * 0.1 }}
-                className="bg-gradient-to-br from-green-50 to-white rounded-2xl p-8 border border-green-100 shadow-lg hover:shadow-xl transition-all"
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: i * 0.1 }}
+                whileHover={{ scale: 1.02 }}
+                className="group relative bg-white rounded-2xl p-8 border border-slate-200 transition-all duration-300 overflow-hidden"
               >
-                <div className="mb-4">
-                  <IconComponent />
+                {/* Animated Gradient Border Effect */}
+                <div className="absolute inset-0 bg-gradient-to-r from-green-500/0 via-green-500/0 to-green-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+
+                <div className="relative z-10 flex flex-col items-center text-center">
+                  <div className="mb-4 p-3 rounded-full bg-green-50 text-green-600 group-hover:bg-green-100 transition-colors">
+                    <IconComponent />
+                  </div>
+                  <p className="text-lg font-bold text-slate-900 mb-2">{feature.title}</p>
+                  <p className="text-slate-600">{feature.description}</p>
                 </div>
-                <p className="font-semibold text-slate-900 mb-2">{feature.title}</p>
-                <p className="text-sm text-slate-600">{feature.description}</p>
               </motion.div>
             )
           })}

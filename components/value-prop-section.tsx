@@ -51,7 +51,7 @@ export function ValuePropSection() {
   ]
 
   return (
-    <section id="value" className="py-24 bg-gradient-to-b from-white to-green-50 px-4">
+    <section id="value" className="py-24 bg-gradient-to-b from-white to-green-50/30 px-4">
       <div className="max-w-7xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 40 }}
@@ -79,23 +79,31 @@ export function ValuePropSection() {
                 whileInView="visible"
                 viewport={{ once: true }}
                 custom={i}
-                className="bg-gradient-to-br from-green-50 to-white rounded-2xl p-8 border border-green-100 shadow-lg hover:shadow-xl transition-all"
+                whileHover={{ y: -8 }}
+                className="group relative bg-white rounded-2xl p-8 border border-slate-200 transition-all duration-300"
               >
-                <div className="mb-4">
-                  <IconComponent />
+                {/* Subtle Hover Glow Effect */}
+                <div className="absolute inset-0 bg-gradient-to-br from-green-500/0 via-green-500/0 to-green-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-2xl" />
+
+                <div className="relative z-10">
+                  <div className="mb-6 inline-flex p-3 rounded-lg bg-green-50 text-green-600 group-hover:scale-110 group-hover:bg-green-100 transition-all duration-300">
+                    <IconComponent />
+                  </div>
+                  <div className="text-xs font-bold text-green-600 uppercase tracking-widest mb-3">
+                    {stakeholder.title}
+                  </div>
+                  <h3 className="text-2xl font-bold text-slate-900 mb-6">{stakeholder.heading}</h3>
+                  <ul className="space-y-4">
+                    {stakeholder.benefits.map((benefit, j) => (
+                      <li key={j} className="flex items-start gap-3">
+                        <div className="w-1.5 h-1.5 bg-green-500 rounded-full mt-2.5 flex-shrink-0 relative">
+                          <div className="absolute inset-0 bg-green-500 rounded-full animate-ping opacity-20" />
+                        </div>
+                        <span className="text-slate-600 font-medium">{benefit}</span>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
-                <div className="text-sm font-bold text-green-600 uppercase tracking-wider mb-2">
-                  {stakeholder.title}
-                </div>
-                <h3 className="text-2xl font-bold text-slate-900 mb-6">{stakeholder.heading}</h3>
-                <ul className="space-y-3">
-                  {stakeholder.benefits.map((benefit, j) => (
-                    <li key={j} className="flex items-start gap-3">
-                      <div className="w-2 h-2 bg-green-600 rounded-full mt-2 flex-shrink-0"></div>
-                      <span className="text-slate-600">{benefit}</span>
-                    </li>
-                  ))}
-                </ul>
               </motion.div>
             )
           })}

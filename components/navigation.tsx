@@ -75,18 +75,14 @@ export function Navigation() {
       initial={{ y: -100 }}
       animate={{ y: 0 }}
       transition={{ type: "spring", stiffness: 100, damping: 20 }}
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${scrolled ? "bg-white/90 dark:bg-[#121212]/80 backdrop-blur-2xl saturate-150 border-b border-slate-200 dark:border-white/10 shadow-sm" : "bg-transparent"
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? "bg-white/90 dark:bg-[#121212]/80 backdrop-blur-2xl saturate-150 border-b border-slate-200 dark:border-white/10 shadow-sm" : "bg-transparent"
         }`}
     >
       <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2">
-          <motion.span
-            className="text-2xl font-black tracking-tighter"
-            whileHover={{ scale: 1.05 }}
-            transition={{ type: "spring", stiffness: 400, damping: 17 }}
-          >
-            <Image src={Logo} alt="Logo" width={200} height={200} />
-          </motion.span>
+
+          <Image src={Logo} alt="Logo" width={200} height={200} />
+
         </Link>
 
         <div className="hidden md:flex items-center gap-8">

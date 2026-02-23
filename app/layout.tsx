@@ -5,6 +5,8 @@ import { Analytics } from "@vercel/analytics/next"
 import { LenisProvider } from "@/components/lenis-provider"
 import ClickSpark from "@/components/click-spark"
 import "./globals.css"
+import { Footer } from "@/components/footer"
+import { Navigation } from "@/components/navigation"
 
 const _inter = Inter({
   subsets: ["latin"],
@@ -35,6 +37,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`font-sans antialiased`}>
+        <Navigation />
         <ClickSpark
           sparkColor="#AFFF00"
           sparkSize={12}
@@ -46,6 +49,7 @@ export default function RootLayout({
           <LenisProvider>{children}</LenisProvider>
         </ClickSpark>
         <Analytics />
+        <Footer />
       </body>
     </html>
   )

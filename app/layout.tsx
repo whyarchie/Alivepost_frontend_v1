@@ -7,6 +7,7 @@ import ClickSpark from "@/components/click-spark"
 import "./globals.css"
 import { Footer } from "@/components/footer"
 import { Navigation } from "@/components/navigation"
+import { CTASection } from "@/components/cta-section"
 
 const _inter = Inter({
   subsets: ["latin"],
@@ -49,6 +50,7 @@ export default function RootLayout({
           <LenisProvider>{children}</LenisProvider>
         </ClickSpark>
         <Analytics />
+        <CTASection />
         <Footer />
       </body>
     </html>

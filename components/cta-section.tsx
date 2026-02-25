@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { BackgroundBeams } from './ui/background-beams'
+import Link from 'next/link'
 
 export function CTASection() {
   return (
@@ -26,16 +27,17 @@ export function CTASection() {
         >
           Partner with us for instant infrastructure and zero upfront investment.
         </motion.p>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.2 }}
-        >
-          <Button className="px-8 py-6 bg-green-500 text-white hover:bg-green-600 font-bold text-lg rounded-lg shadow-[0_0_40px_-10px_rgba(34,197,94,0.5)] transition-all">
-            Schedule a Consultation
-          </Button>
-        </motion.div>
+        <Link href="/contact">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+          >
+            <Button className="px-8 py-6 bg-green-500 text-white hover:bg-green-600 font-bold text-lg rounded-lg shadow-[0_0_40px_-10px_rgba(34,197,94,0.5)] transition-all">
+              Schedule a Consultation
+            </Button>
+          </motion.div>
+        </Link>
       </div>
     </section>
   )

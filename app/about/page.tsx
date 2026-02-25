@@ -1,6 +1,5 @@
 "use client"
 
-import { Navigation } from "@/components/navigation"
 import { CTASection } from "@/components/cta-section"
 import { Footer } from "@/components/footer"
 import { HeroHighlight, Highlight } from "@/components/ui/hero-highlight"
@@ -111,7 +110,6 @@ const impactItems = [
 export default function About() {
     return (
         <main className="relative min-h-screen bg-background">
-            <Navigation />
 
             {/* Hero Section */}
             <section className="relative w-full border-b border-slate-200 overflow-hidden">
@@ -132,7 +130,7 @@ export default function About() {
                             </p>
 
                             <div className="pt-8 w-full flex justify-center">
-                                <Link href="/#hero">
+                                <Link href="/contact">
                                     <HoverBorderGradient
                                         containerClassName="rounded-full"
                                         as="button"

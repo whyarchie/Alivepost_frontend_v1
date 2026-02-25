@@ -1,14 +1,14 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { motion, AnimatePresence } from "framer-motion"
+import { motion, AnimatePresence, Variants } from "framer-motion"
 import Link from "next/link"
-import { useLenis } from "lenis/react"
 import { Menu, X } from "lucide-react"
 import Image from "next/image"
 import Logo from "../public/logo.svg"
-// import Link from "next/link"
-const linkVariants = {
+
+const MotionLink = motion.create(Link)
+const linkVariants: Variants = {
   hidden: { opacity: 0, y: -10 },
   visible: (i: number) => ({
     opacity: 1,
@@ -21,7 +21,7 @@ const linkVariants = {
   }),
 }
 
-const mobileMenuVariants = {
+const mobileMenuVariants: Variants = {
   hidden: { opacity: 0, height: 0 },
   visible: {
     opacity: 1,
@@ -44,7 +44,6 @@ const mobileMenuVariants = {
 export function Navigation() {
   const [scrolled, setScrolled] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const lenis = useLenis()
 
   useEffect(() => {
     const handleScroll = () => {
@@ -53,14 +52,6 @@ export function Navigation() {
     window.addEventListener("scroll", handleScroll)
     return () => window.removeEventListener("scroll", handleScroll)
   }, [])
-
-  const scrollToSection = (id: string) => {
-    const element = document.querySelector(id) as HTMLElement
-    if (element && lenis) {
-      lenis.scrollTo(element, { offset: -100 })
-    }
-    setMobileMenuOpen(false)
-  }
 
   const navLinks = [
     { label: "Home", href: "/" },
@@ -86,19 +77,18 @@ export function Navigation() {
 
         <div className="hidden md:flex items-center gap-8">
           {navLinks.map((item, i) => (
-            <Link
+            <MotionLink
               key={item.label}
               href={item.href}
               className={`text-sm font-medium tracking-wide transition-colors relative ${scrolled ? "text-slate-900 hover:text-green-600 dark:text-white/80 dark:hover:text-[#AFFF00]" : "text-[#121212]/80 hover:text-[#121212]"
                 }`}
-            // initial={{ opacity: 0, y: -10 }}
-            // animate={{ opacity: 1, y: 0 }}
-            // transition={{ delay: i * 0.1, duration: 0.4, ease: [0.25, 0.4, 0.25, 1] }}
-            // whileHover={{ scale: 1.05 }}
-            // whileTap={{ scale: 0.95 }}
+              custom={i}
+              initial="hidden"
+              animate="visible"
+              variants={linkVariants}
             >
               {item.label}
-            </Link>
+            </MotionLink>
           ))}
         </div>
 
@@ -161,24 +151,25 @@ export function Navigation() {
       <AnimatePresence>
         {mobileMenuOpen && (
           <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.3, ease: [0.25, 0.4, 0.25, 1] }}
+            variants={mobileMenuVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
             className="md:hidden bg-white/95 dark:bg-[#121212]/95 backdrop-blur-2xl saturate-150 border-t border-slate-200 dark:border-white/10 overflow-hidden shadow-lg"
           >
             <div className="px-6 py-4 space-y-4">
               {navLinks.map((item, i) => (
-                <motion.button
+                <MotionLink
                   key={item.label}
-                  onClick={() => scrollToSection(item.href)}
+                  href={item.href}
+                  onClick={() => setMobileMenuOpen(false)}
                   className="block w-full text-left text-slate-900 hover:text-green-600 dark:text-white/80 dark:hover:text-[#AFFF00] text-lg font-medium py-2"
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: i * 0.1 }}
                 >
                   {item.label}
-                </motion.button>
+                </MotionLink>
               ))}
               <motion.button
                 className="w-full bg-green-600 text-white px-6 py-3 rounded-full font-bold text-sm tracking-wide mt-4"

@@ -5,6 +5,7 @@ import { useRef } from "react"
 import Image from "next/image"
 import { HoverBorderGradient } from "./ui/hover-border-gradient"
 import { HeroHighlight, Highlight } from "./ui/hero-highlight"
+import Link from "next/link"
 
 const fadeUpVariants = {
   hidden: { opacity: 0, y: 30 },
@@ -78,7 +79,6 @@ export function HeroSection() {
                   A 360° digital recovery ecosystem. Reduce readmissions, unlock new revenue streams, and ensure every patient is monitored exactly according to clinical protocols.
                 </motion.p>
               </div>
-
               <motion.div
                 variants={slideInLeftVariants}
                 initial="hidden"
@@ -86,25 +86,29 @@ export function HeroSection() {
                 custom={3}
                 className="flex flex-wrap gap-4 items-center pt-2"
               >
-                <HoverBorderGradient
-                  containerClassName="rounded-lg"
-                  as="button"
-                  className="bg-green-600 text-white flex items-center gap-2 font-bold px-6 py-3 text-sm"
-                >
-                  <span>Book a Demo</span>
-                  <svg
-                    className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
+                <Link href="/contact">
+                  <HoverBorderGradient
+                    containerClassName="rounded-lg"
+                    as="button"
+                    className="bg-green-600 text-white flex items-center gap-2 font-bold px-6 py-3 text-sm"
                   >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                  </svg>
-                </HoverBorderGradient>
+                    <span>Book a Demo</span>
+                    <svg
+                      className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                    </svg>
+                  </HoverBorderGradient>
+                </Link>
 
-                <button className="text-slate-600 hover:text-slate-900 hover:bg-slate-100 px-6 py-3 rounded-lg font-semibold text-sm tracking-wide transition-colors">
-                  Explore Platform
-                </button>
+                <Link href="/about">
+                  <button className="text-slate-600 hover:text-slate-900 hover:bg-slate-100 px-6 py-3 rounded-lg font-semibold text-sm tracking-wide transition-colors">
+                    Explore Platform
+                  </button>
+                </Link>
               </motion.div>
 
               <motion.div

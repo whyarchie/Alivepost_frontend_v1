@@ -171,14 +171,16 @@ export function Navigation() {
                   {item.label}
                 </MotionLink>
               ))}
-              <motion.button
-                className="w-full bg-green-600 text-white px-6 py-3 rounded-full font-bold text-sm tracking-wide mt-4"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 }}
-              >
-                Book a Demo
-              </motion.button>
+              <Link href="/contact">
+                <motion.button
+                  className="w-full bg-green-600 text-white px-6 py-3 rounded-full font-bold text-sm tracking-wide mt-4"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3 }}
+                >
+                  Book a Demo
+                </motion.button>
+              </Link>
             </div>
           </motion.div>
         )}

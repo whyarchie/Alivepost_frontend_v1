@@ -7,7 +7,7 @@ import { useLenis } from "lenis/react"
 import { Menu, X } from "lucide-react"
 import Image from "next/image"
 import Logo from "../public/logo.svg"
-
+// import Link from "next/link"
 const linkVariants = {
   hidden: { opacity: 0, y: -10 },
   visible: (i: number) => ({
@@ -63,11 +63,10 @@ export function Navigation() {
   }
 
   const navLinks = [
-    { label: "Home", href: "#hero" },
-    { label: "Platform", href: "#platform" },
-    { label: "Solutions", href: "#solutions" },
-    { label: "About", href: "#about" },
-    { label: "Contact", href: "#contact" },
+    { label: "Home", href: "/" },
+    { label: "Solutions", href: "/solutions" },
+    { label: "About", href: "/about" },
+    { label: "Contact", href: "/contact" },
   ]
 
   return (
@@ -87,25 +86,19 @@ export function Navigation() {
 
         <div className="hidden md:flex items-center gap-8">
           {navLinks.map((item, i) => (
-            <motion.button
+            <Link
               key={item.label}
-              onClick={() => scrollToSection(item.href)}
+              href={item.href}
               className={`text-sm font-medium tracking-wide transition-colors relative ${scrolled ? "text-slate-900 hover:text-green-600 dark:text-white/80 dark:hover:text-[#AFFF00]" : "text-[#121212]/80 hover:text-[#121212]"
                 }`}
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.1, duration: 0.4, ease: [0.25, 0.4, 0.25, 1] }}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+            // initial={{ opacity: 0, y: -10 }}
+            // animate={{ opacity: 1, y: 0 }}
+            // transition={{ delay: i * 0.1, duration: 0.4, ease: [0.25, 0.4, 0.25, 1] }}
+            // whileHover={{ scale: 1.05 }}
+            // whileTap={{ scale: 0.95 }}
             >
               {item.label}
-              <motion.span
-                className="absolute -bottom-1 left-0 w-full h-0.5 bg-[#AFFF00] origin-left"
-                initial={{ scaleX: 0 }}
-                whileHover={{ scaleX: 1 }}
-                transition={{ duration: 0.3, ease: [0.25, 0.4, 0.25, 1] }}
-              />
-            </motion.button>
+            </Link>
           ))}
         </div>
 

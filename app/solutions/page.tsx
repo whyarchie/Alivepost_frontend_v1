@@ -238,7 +238,7 @@ export default function Solutions() {
                                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
                                     <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500" />
                                 </span>
-                                Alivepost
+                                Solutions
                             </div>
 
                             <h1 className="text-4xl md:text-5xl lg:text-6xl font-black tracking-tight text-slate-900 leading-[1.1]">

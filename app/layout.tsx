@@ -8,6 +8,7 @@ import "./globals.css"
 import { Footer } from "@/components/footer"
 import { Navigation } from "@/components/navigation"
 import { CTASection } from "@/components/cta-section"
+import { SpeedInsights } from "@vercel/speed-insights/next"
 
 const _inter = Inter({
   subsets: ["latin"],
@@ -50,6 +51,7 @@ export default function RootLayout({
           <LenisProvider>{children}</LenisProvider>
         </ClickSpark>
         <Analytics />
+        <SpeedInsights />
         <CTASection />
         <Footer />
       </body>

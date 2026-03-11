@@ -1,11 +1,13 @@
 "use client"
 
+import { useState } from "react"
 import { HeroHighlight, Highlight } from "@/components/ui/hero-highlight"
 import { HoverBorderGradient } from "@/components/ui/hover-border-gradient"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { motion } from "framer-motion"
+import { useToast } from "@/hooks/use-toast"
 
 const contactMethods = [
     {
@@ -41,7 +43,47 @@ const contactMethods = [
     }
 ]
 
+
 export default function Contact() {
+    const { toast } = useToast()
+    const [isSubmitting, setIsSubmitting] = useState(false)
+
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault()
+        setIsSubmitting(true)
+
+        const formData = new FormData(e.currentTarget)
+
+        try {
+            const response = await fetch("https://formsubmit.co/abhishekcv2015@gmail.com", {
+                method: "POST",
+                body: formData,
+            })
+
+            if (response.ok) {
+                toast({
+                    title: "Message sent!",
+                    description: "We'll get back to you as soon as possible.",
+                })
+                    ; (e.target as HTMLFormElement).reset()
+            } else {
+                toast({
+                    variant: "destructive",
+                    title: "Error",
+                    description: "Oops! Something went wrong. Please try again.",
+                })
+            }
+        } catch (error) {
+            toast({
+                variant: "destructive",
+                title: "Error",
+                description: "Oops! Something went wrong. Please try again.",
+            })
+        } finally {
+            setIsSubmitting(false)
+        }
+    }
+
     return (
         <main className="relative min-h-screen bg-background">
             {/* Hero Section */}
@@ -122,34 +164,37 @@ export default function Contact() {
                             transition={{ duration: 0.8, delay: 0.2 }}
                             className="bg-white rounded-3xl p-8 border border-slate-200 shadow-xl shadow-slate-200/50"
                         >
-                            <form className="space-y-6" onSubmit={(e) => e.preventDefault()}>
+                            <form className="space-y-6" onSubmit={handleSubmit}>
+                                <input type="hidden" name="_captcha" value="false" />
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                                     <div className="space-y-2">
                                         <Label htmlFor="first-name" className="text-slate-700 font-medium">First name</Label>
-                                        <Input id="first-name" placeholder="John" className="bg-slate-50/50 h-12" />
+                                        <Input id="first-name" name="First Name" placeholder="John" className="bg-slate-50/50 h-12" required />
                                     </div>
                                     <div className="space-y-2">
                                         <Label htmlFor="last-name" className="text-slate-700 font-medium">Last name</Label>
-                                        <Input id="last-name" placeholder="Doe" className="bg-slate-50/50 h-12" />
+                                        <Input id="last-name" name="Last Name" placeholder="Doe" className="bg-slate-50/50 h-12" required />
                                     </div>
                                 </div>
 
                                 <div className="space-y-2">
                                     <Label htmlFor="email" className="text-slate-700 font-medium">Email address</Label>
-                                    <Input id="email" type="email" placeholder="john@example.com" className="bg-slate-50/50 h-12" />
+                                    <Input id="email" name="email" type="email" placeholder="john@example.com" className="bg-slate-50/50 h-12" required />
                                 </div>
 
                                 <div className="space-y-2">
                                     <Label htmlFor="subject" className="text-slate-700 font-medium">Subject</Label>
-                                    <Input id="subject" placeholder="How can we help?" className="bg-slate-50/50 h-12" />
+                                    <Input id="subject" name="_subject" placeholder="How can we help?" className="bg-slate-50/50 h-12" required />
                                 </div>
 
                                 <div className="space-y-2">
                                     <Label htmlFor="message" className="text-slate-700 font-medium">Message</Label>
                                     <Textarea
                                         id="message"
+                                        name="message"
                                         placeholder="Tell us a little about your project..."
                                         className="min-h-[150px] bg-slate-50/50 resize-y"
+                                        required
                                     />
                                 </div>
 
@@ -157,10 +202,9 @@ export default function Contact() {
                                     <HoverBorderGradient
                                         containerClassName="rounded-full w-full"
                                         as="button"
-
-                                        className="bg-green-600 text-white w-full flex justify-center items-center gap-2 font-bold px-8 py-4 text-sm shadow-xl shadow-green-900/20"
+                                        className={`bg-green-600 text-white w-full flex justify-center items-center gap-2 font-bold px-8 py-4 text-sm shadow-xl shadow-green-900/20 ${isSubmitting ? "opacity-50 pointer-events-none" : ""}`}
                                     >
-                                        <span>Send Message</span>
+                                        <span>{isSubmitting ? "Sending..." : "Send Message"}</span>
                                         <svg className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
                                         </svg>

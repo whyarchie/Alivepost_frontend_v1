@@ -91,13 +91,13 @@ export function Navigation() {
             </MotionLink>
           ))}
         </div>
-
+          <Link href='/contact'>
         <motion.button
           className="hidden md:block bg-green-600 text-white px-6 py-2.5 rounded-full font-bold text-sm tracking-wide relative overflow-hidden"
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           transition={{ type: "spring", stiffness: 400, damping: 17 }}
-        >
+          >
           <motion.div
             className="absolute inset-0 bg-white/30"
             animate={{
@@ -108,14 +108,15 @@ export function Navigation() {
               ],
             }}
             transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut" }}
-          />
+            />
           <motion.div
             className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full"
             animate={{ x: ["-100%", "200%"] }}
             transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY, repeatDelay: 3 }}
-          />
+            />
           <span className="relative z-10">Book a Demo</span>
         </motion.button>
+            </Link>
 
         <motion.button
           className="md:hidden p-2"

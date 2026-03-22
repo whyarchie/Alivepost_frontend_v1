@@ -32,6 +32,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
+import { Pill, User, User2, UserRoundPlus, UsersRoundIcon } from "lucide-react"
 
 const data = {
   user: {
@@ -40,25 +41,30 @@ const data = {
     avatar: "/avatars/shadcn.jpg",
   },
   navMain: [
+    // {
+    //   title: "Dashboard",
+    //   url: "#",
+    //   icon: IconDashboard,
+    // },
     {
-      title: "Dashboard",
+      title: "Create Patient",
       url: "#",
-      icon: IconDashboard,
+      icon: UserRoundPlus,
     },
     {
-      title: "Lifecycle",
+      title: "Medications",
       url: "#",
-      icon: IconListDetails,
+      icon: Pill,
     },
     {
-      title: "Analytics",
+      title: "Patients",
       url: "#",
-      icon: IconChartBar,
+      icon: User,
     },
     {
-      title: "Projects",
+      title: "Doctors",
       url: "#",
-      icon: IconFolder,
+      icon: UsersRoundIcon,
     },
     {
       title: "Team",
@@ -152,7 +158,7 @@ const data = {
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
-    <Sidebar collapsible="offcanvas" {...props}>
+    <Sidebar collapsible="offcanvas" {...props} >
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
@@ -160,22 +166,21 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               asChild
               className="data-[slot=sidebar-menu-button]:p-1.5!"
             >
-              <a href="#">
-                <IconInnerShadowTop className="size-5!" />
-                <span className="text-base font-semibold">Acme Inc.</span>
-              </a>
+
+              <span className="text-base font-semibold">Alivepost</span>
+
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={data.navMain} />
-        <NavDocuments items={data.documents} />
-        <NavSecondary items={data.navSecondary} className="mt-auto" />
+        {/* <NavDocuments items={data.documents} />
+        <NavSecondary items={data.navSecondary} className="mt-auto" /> */}
       </SidebarContent>
       <SidebarFooter>
         <NavUser user={data.user} />
       </SidebarFooter>
-    </Sidebar>
+    </Sidebar >
   )
 }

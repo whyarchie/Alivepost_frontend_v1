@@ -39,7 +39,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`font-sans antialiased`}>
-        <Navigation />
+        {/* <Navigation /> */}
         <ClickSpark
           sparkColor="#AFFF00"
           sparkSize={12}
@@ -52,8 +52,8 @@ export default function RootLayout({
         </ClickSpark>
         <Analytics />
         <SpeedInsights />
-        <CTASection />
-        <Footer />
+        {/* <CTASection />
+        <Footer /> */}
       </body>
     </html>
   )

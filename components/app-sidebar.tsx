@@ -48,7 +48,7 @@ const data = {
     // },
     {
       title: "Create Patient",
-      url: "#",
+      url: "/dashboard/create-patient",
       icon: UserRoundPlus,
     },
     {
@@ -58,7 +58,7 @@ const data = {
     },
     {
       title: "Patients",
-      url: "#",
+      url: "/dashboard/patients",
       icon: User,
     },
     {

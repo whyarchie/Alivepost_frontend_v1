@@ -1,25 +1,14 @@
 "use client"
 
 import * as React from "react"
+import { useEffect, useState } from "react"
 import {
-  IconCamera,
-  IconChartBar,
   IconDashboard,
-  IconDatabase,
-  IconFileAi,
-  IconFileDescription,
-  IconFileWord,
-  IconFolder,
   IconHelp,
-  IconInnerShadowTop,
-  IconListDetails,
-  IconReport,
   IconSearch,
   IconSettings,
-  IconUsers,
 } from "@tabler/icons-react"
 
-import { NavDocuments } from "@/components/nav-documents"
 import { NavMain } from "@/components/nav-main"
 import { NavSecondary } from "@/components/nav-secondary"
 import { NavUser } from "@/components/nav-user"
@@ -32,133 +21,43 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import { Pill, User, User2, UserRoundPlus, UsersRoundIcon } from "lucide-react"
+import { Pill, User, Stethoscope, UserRoundPlus, Microscope, Building2 } from "lucide-react"
 
-const data = {
-  user: {
-    name: "shadcn",
-    email: "m@example.com",
-    avatar: "/avatars/shadcn.jpg",
-  },
-  navMain: [
-    // {
-    //   title: "Dashboard",
-    //   url: "#",
-    //   icon: IconDashboard,
-    // },
-    {
-      title: "Create Patient",
-      url: "/dashboard/create-patient",
-      icon: UserRoundPlus,
-    },
-    {
-      title: "Medications",
-      url: "#",
-      icon: Pill,
-    },
-    {
-      title: "Patients",
-      url: "/dashboard/patients",
-      icon: User,
-    },
-    {
-      title: "Doctors",
-      url: "#",
-      icon: UsersRoundIcon,
-    },
-    {
-      title: "Team",
-      url: "#",
-      icon: IconUsers,
-    },
-  ],
-  navClouds: [
-    {
-      title: "Capture",
-      icon: IconCamera,
-      isActive: true,
-      url: "#",
-      items: [
-        {
-          title: "Active Proposals",
-          url: "#",
-        },
-        {
-          title: "Archived",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Proposal",
-      icon: IconFileDescription,
-      url: "#",
-      items: [
-        {
-          title: "Active Proposals",
-          url: "#",
-        },
-        {
-          title: "Archived",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Prompts",
-      icon: IconFileAi,
-      url: "#",
-      items: [
-        {
-          title: "Active Proposals",
-          url: "#",
-        },
-        {
-          title: "Archived",
-          url: "#",
-        },
-      ],
-    },
-  ],
-  navSecondary: [
-    {
-      title: "Settings",
-      url: "#",
-      icon: IconSettings,
-    },
-    {
-      title: "Get Help",
-      url: "#",
-      icon: IconHelp,
-    },
-    {
-      title: "Search",
-      url: "#",
-      icon: IconSearch,
-    },
-  ],
-  documents: [
-    {
-      name: "Data Library",
-      url: "#",
-      icon: IconDatabase,
-    },
-    {
-      name: "Reports",
-      url: "#",
-      icon: IconReport,
-    },
-    {
-      name: "Word Assistant",
-      url: "#",
-      icon: IconFileWord,
-    },
-  ],
-}
+const navMain = [
+  { title: "Dashboard", url: "/dashboard", icon: IconDashboard },
+  { title: "Create Patient", url: "/dashboard/create-patient", icon: UserRoundPlus },
+  { title: "Patients", url: "/dashboard/patients", icon: User },
+  { title: "Doctors", url: "/dashboard/doctors", icon: Stethoscope },
+  { title: "Medications", url: "/dashboard/medications", icon: Pill },
+  { title: "Diseases", url: "/dashboard/diseases", icon: Microscope },
+]
+
+const navSecondary = [
+  { title: "Settings", url: "#", icon: IconSettings },
+  { title: "Get Help", url: "#", icon: IconHelp },
+  { title: "Search", url: "#", icon: IconSearch },
+]
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const [hospitalInfo, setHospitalInfo] = useState({ name: "Hospital", userId: "" })
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("hospitalInfo")
+      if (stored) {
+        setHospitalInfo(JSON.parse(stored))
+      }
+    } catch { }
+  }, [])
+
+  const user = {
+    name: hospitalInfo.name,
+    email: hospitalInfo.userId || "admin@alivepost.com",
+    avatar: "/avatars/shadcn.jpg",
+  }
+
   return (
-    <Sidebar collapsible="offcanvas" {...props} >
+    <Sidebar collapsible="offcanvas" {...props}>
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
@@ -166,21 +65,23 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               asChild
               className="data-[slot=sidebar-menu-button]:p-1.5!"
             >
-
-              <span className="text-base font-semibold">Alivepost</span>
-
+              <a href="/dashboard" className="flex items-center gap-2">
+                <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary text-primary-foreground">
+                  <Building2 className="h-4 w-4" />
+                </div>
+                <span className="text-base font-semibold truncate">{hospitalInfo.name}</span>
+              </a>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={data.navMain} />
-        {/* <NavDocuments items={data.documents} />
-        <NavSecondary items={data.navSecondary} className="mt-auto" /> */}
+        <NavMain items={navMain} />
+        <NavSecondary items={navSecondary} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} />
+        <NavUser user={user} />
       </SidebarFooter>
-    </Sidebar >
+    </Sidebar>
   )
 }

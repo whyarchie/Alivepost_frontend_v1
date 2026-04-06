@@ -9,6 +9,8 @@ import { Footer } from "@/components/footer"
 import { Navigation } from "@/components/navigation"
 import { CTASection } from "@/components/cta-section"
 import { SpeedInsights } from "@vercel/speed-insights/next"
+import { QueryProvider } from "@/components/query-provider"
+import { Toaster } from "sonner"
 
 const _inter = Inter({
   subsets: ["latin"],
@@ -48,8 +50,11 @@ export default function RootLayout({
           duration={400}
           easing="ease-out"
         >
-          <LenisProvider>{children}</LenisProvider>
+          <LenisProvider>
+            <QueryProvider>{children}</QueryProvider>
+          </LenisProvider>
         </ClickSpark>
+        <Toaster richColors position="top-right" />
         <Analytics />
         <SpeedInsights />
         {/* <CTASection />

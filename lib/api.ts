@@ -1,4 +1,4 @@
-const API_BASE = "http://localhost:3000/api/v1";
+const API_BASE = "https://api.alivepost.com/api/v1";
 
 // ─── Generic Fetch Wrapper ─────────────────────────────────────
 async function apiFetch<T = any>(

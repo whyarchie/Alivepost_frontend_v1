@@ -12,6 +12,7 @@ import { SpeedInsights } from "@vercel/speed-insights/next"
 import { QueryProvider } from "@/components/query-provider"
 import { Toaster } from "sonner"
 
+
 const _inter = Inter({
   subsets: ["latin"],
   variable: "--font-sans",

@@ -28,7 +28,7 @@ export function LoginForm({
     mutationFn: () => hospitalLogin(userId, password),
     onSuccess: (data) => {
       // Set cookie on frontend domain so middleware can detect auth
-      const token = data?.data?.token || data?.token || "authenticated"
+      const token = data?.data?.token || data?.token 
       document.cookie = `token=${token}; path=/; max-age=${60 * 60 * 24 * 7}; samesite=lax`
 
       // Store hospital info for sidebar

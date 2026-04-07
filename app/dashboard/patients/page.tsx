@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import Link from "next/link"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { motion, AnimatePresence } from "framer-motion"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -10,7 +11,7 @@ import { format } from "date-fns"
 import {
     Phone, Search, ArrowLeft, User, Heart, Droplets, Calendar as CalendarIcon2,
     Activity, Pill, Plus, Clock, Stethoscope, Building2, FileText,
-    AlertCircle, CheckCircle2, Shield, Loader2, Check, X,
+    AlertCircle, CheckCircle2, Shield, Loader2, Check, X, ListChecks
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -765,18 +766,30 @@ export default function PatientsPage() {
                                                             </span>
                                                         </div>
                                                     </div>
-                                                    <Button
-                                                        size="sm"
-                                                        variant="outline"
-                                                        className="gap-1.5 shrink-0"
-                                                        onClick={() => {
-                                                            setSelectedConditionId(c.id)
-                                                            medicineForm.reset()
-                                                            setMedicineDialogOpen(true)
-                                                        }}
-                                                    >
-                                                        <Pill className="h-4 w-4" /> Assign Medicine
-                                                    </Button>
+                                                    <div className="flex items-center gap-2">
+                                                        <Button
+                                                            size="sm"
+                                                            variant="outline"
+                                                            className="gap-1.5 shrink-0"
+                                                            asChild
+                                                        >
+                                                            <Link href={`/dashboard/create-progress?mobile=${patient.mobileNumber}&conditionId=${c.id}`}>
+                                                                <ListChecks className="h-4 w-4" /> Track Progress
+                                                            </Link>
+                                                        </Button>
+                                                        <Button
+                                                            size="sm"
+                                                            variant="outline"
+                                                            className="gap-1.5 shrink-0"
+                                                            onClick={() => {
+                                                                setSelectedConditionId(c.id)
+                                                                medicineForm.reset()
+                                                                setMedicineDialogOpen(true)
+                                                            }}
+                                                        >
+                                                            <Pill className="h-4 w-4" /> Assign Medicine
+                                                        </Button>
+                                                    </div>
                                                 </div>
 
                                                 {/* Medicines List */}
@@ -804,6 +817,35 @@ export default function PatientsPage() {
                                                                     </div>
                                                                 </div>
                                                             ))}
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {/* Progress Schedule List */}
+                                                {c.patientProgress && c.patientProgress.length > 0 && (
+                                                    <div className="border-t bg-muted/30 px-4 py-3">
+                                                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Tracked Progress</p>
+                                                        <div className="grid gap-2">
+                                                            {c.patientProgress.map((p: any) => {
+                                                                let questionsCount = 0;
+                                                                try {
+                                                                    questionsCount = JSON.parse(p.questions).length;
+                                                                } catch (e) { }
+                                                                return (
+                                                                    <div key={p.id} className="flex items-center justify-between rounded-lg bg-background p-3 text-sm border">
+                                                                        <div className="flex items-center gap-2">
+                                                                            <ListChecks className="h-4 w-4 text-primary shrink-0" />
+                                                                            <span className="font-medium">{format(new Date(p.scheduledDate), "MMM dd, yyyy")}</span>
+                                                                            <Badge variant="secondary" className="text-xs">{p.followUpStatus}</Badge>
+                                                                        </div>
+                                                                        <div className="flex items-center gap-3 text-muted-foreground shrink-0">
+                                                                            <span className="flex items-center gap-1 text-xs">
+                                                                                {questionsCount} Questions
+                                                                            </span>
+                                                                        </div>
+                                                                    </div>
+                                                                )
+                                                            })}
                                                         </div>
                                                     </div>
                                                 )}

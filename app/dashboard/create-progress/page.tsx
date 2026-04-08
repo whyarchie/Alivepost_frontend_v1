@@ -19,17 +19,21 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { toast } from "sonner"
 import { searchPatientByMobile, createPatientProgress } from "@/lib/api"
 
-type QuestionType = "TEXT" | "MULTIPLE_CHOICE"
+
 
 interface Option {
     id: string
     text: string
+    image?: string
 }
+
+type QuestionType = "TEXT" | "MULTIPLE_CHOICE"
 
 interface Question {
     id: string
-    type: QuestionType
-    prompt: string
+    question: string
+    isText: boolean
+    image?: string
     options?: Option[]
 }
 
@@ -59,13 +63,7 @@ function CreateProgressContent() {
     const [occurrences, setOccurrences] = useState<string>("5")
 
     // Questions builder state
-    const [questions, setQuestions] = useState<Question[]>([
-        {
-            id: crypto.randomUUID(),
-            type: "TEXT",
-            prompt: "How are you feeling today?",
-        }
-    ])
+    const [questions, setQuestions] = useState<Question[]>([])
 
     // Queries
     const patientQuery = useQuery({
@@ -83,21 +81,21 @@ function CreateProgressContent() {
         }
     }, [patientQuery.data, initialConditionId, selectedConditionId])
 
-    // Mutations
     const progressMutation = useMutation({
         mutationFn: async () => {
-            // Serialize the questions configuration
-            const questionsJson = JSON.stringify(questions.map(q => ({
-                type: q.type,
-                prompt: q.prompt,
-                options: q.type === "MULTIPLE_CHOICE" ? q.options?.map(o => o.text) : undefined
-            })))
+            // Map the questions configuration to match backend schema
+            const mappedQuestions = questions.map(q => ({
+                question: q.question,
+                isText: q.isText,
+                image: q.image,
+                options: !q.isText ? q.options?.map(o => ({ text: o.text, image: o.image })) : undefined
+            }))
 
             return createPatientProgress({
                 patientConditionId: parseInt(selectedConditionId),
                 frequency: parseInt(frequency),
                 totalOccurrences: parseInt(occurrences),
-                questions: questionsJson,
+                questions: mappedQuestions,
                 startDate: new Date(startDate).toISOString(),
             })
         },
@@ -110,8 +108,8 @@ function CreateProgressContent() {
             setQuestions([
                 {
                     id: crypto.randomUUID(),
-                    type: "TEXT",
-                    prompt: "How are you feeling today?",
+                    isText: true,
+                    question: "How are you feeling today?",
                 }
             ])
         },
@@ -135,8 +133,8 @@ function CreateProgressContent() {
             ...questions,
             {
                 id: crypto.randomUUID(),
-                type: "TEXT",
-                prompt: "",
+                isText: true,
+                question: "",
             }
         ])
     }
@@ -148,9 +146,13 @@ function CreateProgressContent() {
     const updateQuestion = (id: string, updates: Partial<Question>) => {
         setQuestions(questions.map(q => {
             if (q.id === id) {
-                // If switching from TEXT to MULTIPLE_CHOICE, ensure options exist
-                if (updates.type === "MULTIPLE_CHOICE" && !q.options) {
+                // If switching from text to multiple choice, ensure options exist
+                if (updates.isText === false && !q.options) {
                     return { ...q, ...updates, options: [{ id: crypto.randomUUID(), text: "Option 1" }, { id: crypto.randomUUID(), text: "Option 2" }] }
+                }
+                // If switching to text, clear options
+                if (updates.isText === true) {
+                    return { ...q, ...updates, options: undefined }
                 }
                 return { ...q, ...updates }
             }
@@ -210,11 +212,11 @@ function CreateProgressContent() {
         }
 
         for (let q of questions) {
-            if (!q.prompt.trim()) {
+            if (!q.question.trim()) {
                 toast.error("All questions must have a prompt text")
                 return
             }
-            if (q.type === "MULTIPLE_CHOICE" && (!q.options || q.options.length < 2)) {
+            if (!q.isText && (!q.options || q.options.length < 2)) {
                 toast.error("Multiple choice questions must have at least 2 options")
                 return
             }
@@ -385,14 +387,17 @@ function CreateProgressContent() {
                                                         <Label>Question text</Label>
                                                         <Input
                                                             placeholder="e.g. Rate your pain from 1-10"
-                                                            value={q.prompt}
-                                                            onChange={e => updateQuestion(q.id, { prompt: e.target.value })}
+                                                            value={q.question}
+                                                            onChange={e => updateQuestion(q.id, { question: e.target.value })}
                                                             className="bg-background"
                                                         />
                                                     </div>
                                                     <div className="w-full md:w-48 space-y-2 shrink-0">
                                                         <Label>Question Type</Label>
-                                                        <Select value={q.type} onValueChange={(val: QuestionType) => updateQuestion(q.id, { type: val })}>
+                                                        <Select
+                                                            value={q.isText ? "TEXT" : "MULTIPLE_CHOICE"}
+                                                            onValueChange={(val: QuestionType) => updateQuestion(q.id, { isText: val === "TEXT" })}
+                                                        >
                                                             <SelectTrigger className="bg-background">
                                                                 <SelectValue />
                                                             </SelectTrigger>
@@ -405,7 +410,7 @@ function CreateProgressContent() {
                                                 </div>
 
                                                 {/* Options builder for MULTIPLE_CHOICE */}
-                                                {q.type === "MULTIPLE_CHOICE" && q.options && (
+                                                {!q.isText && q.options && (
                                                     <div className="mt-4 pt-4 border-t border-muted-foreground/20 space-y-3">
                                                         <Label className="text-xs uppercase text-muted-foreground font-bold tracking-wider">Answer Options</Label>
                                                         <div className="space-y-2">

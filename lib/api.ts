@@ -1,4 +1,4 @@
-const API_BASE = "https://api.alivepost.com/api/v1";
+const API_BASE = "http://localhost:3000/api/v1";
 
 // ─── Generic Fetch Wrapper ─────────────────────────────────────
 async function apiFetch<T = any>(
@@ -138,7 +138,7 @@ export async function createPatientProgress(data: {
   patientConditionId: number;
   frequency: number;
   totalOccurrences: number;
-  questions: string;
+  questions: any[];
   startDate: string;
 }) {
   return apiFetch("/patient/condition/createprogress", {

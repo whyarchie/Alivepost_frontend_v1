@@ -1,4 +1,5 @@
-const API_BASE = "http://localhost:3000/api/v1";
+const API_BASE = `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1`;
+console.log(API_BASE)
 
 // ─── Generic Fetch Wrapper ─────────────────────────────────────
 async function apiFetch<T = any>(

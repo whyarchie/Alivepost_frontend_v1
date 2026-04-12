@@ -299,13 +299,13 @@ export default function PrivacyPolicyPage() {
                         </p>
                         <div className="flex flex-col items-center gap-4">
                             <Button asChild size="lg" className="rounded-full px-8">
-                                <a href="mailto:support@alivepost.com">
+                                <a href="mailto:Abhishek@alivepost.com">
                                     <Mail className="mr-2 h-4 w-4" />
-                                    support@alivepost.com
+                                    Abhishek@alivepost.com
                                 </a>
                             </Button>
                             <div className="text-sm text-muted-foreground font-medium">
-                                Hospital District, Suite 500, CityGen
+                                H-53 Sector 63 Noida, 201301
                             </div>
                         </div>
                     </section>

@@ -62,14 +62,14 @@ export default function PrivacyPolicyPage() {
                                     <Mail className="h-5 w-5 text-primary mt-0.5" />
                                     <div>
                                         <div className="font-medium text-foreground">Contact</div>
-                                        <div className="text-sm">support@alivepost.com</div>
+                                        <div className="text-sm">Abhishek@alivepost.com</div>
                                     </div>
                                 </div>
                                 <div className="flex items-start gap-4">
                                     <Smartphone className="h-5 w-5 text-primary mt-0.5" />
                                     <div>
                                         <div className="font-medium text-foreground">Address</div>
-                                        <div className="text-sm">Innovation Hub, Healthcare District, 560001</div>
+                                        <div className="text-sm">H-53 Sector 63 Noida, 201301</div>
                                     </div>
                                 </div>
                             </div>

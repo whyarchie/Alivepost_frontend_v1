@@ -55,7 +55,7 @@ export function Footer() {
     },
     {
       title: "Legal",
-      links: ["Privacy Policy", "Terms of Service", "Security"],
+      links: [{ name: "Privacy Policy", href: "/privacy" }, "Terms of Service", "Security"],
     },
   ]
 
@@ -168,14 +168,14 @@ export function Footer() {
             <motion.div key={section.title} variants={itemVariants}>
               <h4 className="font-bold text-white text-sm mb-3">{section.title}</h4>
               <ul className="space-y-2">
-                {section.links.map((item) => (
-                  <li key={item}>
+                {section.links.map((item: any) => (
+                  <li key={typeof item === "string" ? item : item.name}>
                     <motion.div whileHover={{ x: 4 }} transition={{ type: "spring", stiffness: 400, damping: 17 }}>
                       <Link
-                        href="#"
+                        href={typeof item === "string" ? "#" : item.href}
                         className="text-white/60 hover:text-[#AFFF00] font-mono text-xs transition-colors inline-block"
                       >
-                        {item}
+                        {typeof item === "string" ? item : item.name}
                       </Link>
                     </motion.div>
                   </li>

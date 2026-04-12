@@ -12,7 +12,8 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { hospitalLogin } from "@/lib/api"
 import { useMutation } from "@tanstack/react-query"
 import { toast } from "sonner"
-import { Loader2, Building2, Lock } from "lucide-react"
+import Link from "next/link"
+import { Loader2, Building2, Lock, ShieldCheck } from "lucide-react"
 
 export function LoginForm({
   className,
@@ -28,7 +29,7 @@ export function LoginForm({
     mutationFn: () => hospitalLogin(userId, password),
     onSuccess: (data) => {
       // Set cookie on frontend domain so middleware can detect auth
-      const token = data?.data?.token || data?.token 
+      const token = data?.data?.token || data?.token
       document.cookie = `token=${token}; path=/; max-age=${60 * 60 * 24 * 7}; samesite=lax`
 
       // Store hospital info for sidebar
@@ -126,6 +127,15 @@ export function LoginForm({
                   )}
                 </Button>
               </div>
+              <div className="text-center text-sm">
+                <p className="text-muted-foreground">
+                  By logging in, you agree to our{" "}
+                  <Link href="/privacy" className="underline underline-offset-4 hover:text-primary transition-colors inline-flex items-center gap-1">
+                    <ShieldCheck className="h-3.5 w-3.5" />
+                    Privacy Policy
+                  </Link>
+                </p>
+              </div>
             </form>
           </div>
           <div className="relative hidden bg-muted md:block h-full w-full">
@@ -135,8 +145,8 @@ export function LoginForm({
               className="absolute inset-0 h-full w-full object-cover dark:brightness-[0.2] dark:grayscale"
             />
           </div>
-        </CardContent>
-      </Card>
-    </div>
+        </CardContent >
+      </Card >
+    </div >
   )
 }

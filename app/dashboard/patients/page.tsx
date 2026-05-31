@@ -35,6 +35,15 @@ import { cn } from "@/lib/utils"
 import {
     Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table"
+import {
+    Pagination,
+    PaginationContent,
+    PaginationEllipsis,
+    PaginationItem,
+    PaginationLink,
+    PaginationNext,
+    PaginationPrevious,
+} from "@/components/ui/pagination"
 import { toast } from "sonner"
 import {
     searchPatientByMobile,
@@ -141,6 +150,34 @@ export default function PatientsPage() {
 
     const [page, setPage] = useState(1)
     const limit = 10
+
+    const getPageNumbers = () => {
+        const pages = []
+        const totalPages = patientListQuery.data?.data?.pagination?.totalPages || 1
+        
+        // Always include page 1
+        pages.push(1)
+        
+        if (page > 3) {
+            pages.push("ellipsis-start")
+        }
+        
+        // Pages around current page
+        for (let i = Math.max(2, page - 1); i <= Math.min(totalPages - 1, page + 1); i++) {
+            pages.push(i)
+        }
+        
+        if (page < totalPages - 2) {
+            pages.push("ellipsis-end")
+        }
+        
+        // Always include last page if it's more than 1
+        if (totalPages > 1) {
+            pages.push(totalPages)
+        }
+        
+        return pages
+    }
 
     // Paginated patient list query
     const patientListQuery = useQuery({
@@ -468,30 +505,62 @@ export default function PatientsPage() {
                                     </Table>
                                     
                                     {/* PAGINATION */}
-                                    {patientListQuery.data.data.pagination && patientListQuery.data.data.pagination.totalPages > 1 && (
-                                        <div className="flex items-center justify-between border-t px-4 py-4 bg-muted/20">
-                                            <div className="text-sm text-muted-foreground">
+                                    {patientListQuery.data?.data?.pagination && patientListQuery.data.data.pagination.totalPages > 1 && (
+                                        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 border-t px-4 py-4 bg-muted/20">
+                                            <div className="text-sm text-muted-foreground order-2 sm:order-1">
                                                 Showing page <span className="font-semibold">{page}</span> of <span className="font-semibold">{patientListQuery.data.data.pagination.totalPages}</span> ({patientListQuery.data.data.pagination.total} patients)
                                             </div>
-                                            <div className="flex gap-2">
-                                                <Button
-                                                    size="sm"
-                                                    variant="outline"
-                                                    disabled={page <= 1}
-                                                    onClick={() => setPage(p => Math.max(1, p - 1))}
-                                                    className="h-8 text-xs"
-                                                >
-                                                    Previous
-                                                </Button>
-                                                <Button
-                                                    size="sm"
-                                                    variant="outline"
-                                                    disabled={page >= patientListQuery.data.data.pagination.totalPages}
-                                                    onClick={() => setPage(p => p + 1)}
-                                                    className="h-8 text-xs"
-                                                >
-                                                    Next
-                                                </Button>
+                                            <div className="order-1 sm:order-2">
+                                                <Pagination className="justify-end w-auto">
+                                                    <PaginationContent>
+                                                        <PaginationItem>
+                                                            <PaginationPrevious
+                                                                href="#"
+                                                                onClick={(e) => {
+                                                                    e.preventDefault()
+                                                                    if (page > 1) setPage(page - 1)
+                                                                }}
+                                                                className={page <= 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                                                            />
+                                                        </PaginationItem>
+                                                        {getPageNumbers().map((pageNum, idx) => {
+                                                            if (pageNum === "ellipsis-start" || pageNum === "ellipsis-end") {
+                                                                return (
+                                                                    <PaginationItem key={`ellipsis-${idx}`}>
+                                                                        <PaginationEllipsis />
+                                                                    </PaginationItem>
+                                                                )
+                                                            }
+                                                            const isPageActive = page === pageNum
+                                                            return (
+                                                                <PaginationItem key={`page-${pageNum}`}>
+                                                                    <PaginationLink
+                                                                        href="#"
+                                                                        onClick={(e) => {
+                                                                            e.preventDefault()
+                                                                            setPage(pageNum as number)
+                                                                        }}
+                                                                        isActive={isPageActive}
+                                                                        className="cursor-pointer"
+                                                                    >
+                                                                        {pageNum}
+                                                                    </PaginationLink>
+                                                                </PaginationItem>
+                                                            )
+                                                        })}
+                                                        <PaginationItem>
+                                                            <PaginationNext
+                                                                href="#"
+                                                                onClick={(e) => {
+                                                                    e.preventDefault()
+                                                                    const totalPages = patientListQuery.data?.data?.pagination?.totalPages || 1
+                                                                    if (page < totalPages) setPage(page + 1)
+                                                                }}
+                                                                className={page >= (patientListQuery.data?.data?.pagination?.totalPages || 1) ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                                                            />
+                                                        </PaginationItem>
+                                                    </PaginationContent>
+                                                </Pagination>
                                             </div>
                                         </div>
                                     )}

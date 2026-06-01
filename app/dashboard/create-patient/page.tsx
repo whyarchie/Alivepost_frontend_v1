@@ -3,7 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import * as z from "zod"
-import { UserPlus, Phone, Loader2 } from "lucide-react"
+import { UserPlus, Phone, Loader2, FileText } from "lucide-react"
 import { useMutation } from "@tanstack/react-query"
 
 import { Button } from "@/components/ui/button"
@@ -24,12 +24,22 @@ const formSchema = z.object({
     bloodGroup: z.string({ required_error: "Please select a blood group." }),
     gender: z.enum(["MALE", "FEMALE", "OTHER"], { required_error: "Please select a gender." }),
     mobileNumber: z.string().min(10, "Mobile number must be at least 10 characters."),
+    idType: z.string().optional(),
+    idNumber: z.string().optional(),
 })
 
 export default function CreatePatient() {
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
-        defaultValues: { name: "", mobileNumber: "", dateOfBirth: "" },
+        defaultValues: {
+            name: "",
+            mobileNumber: "",
+            dateOfBirth: "",
+            bloodGroup: "",
+            gender: undefined,
+            idType: "",
+            idNumber: "",
+        },
     })
 
     const mutation = useMutation({
@@ -40,6 +50,8 @@ export default function CreatePatient() {
                 bloodGroup: values.bloodGroup,
                 gender: values.gender,
                 mobileNumber: values.mobileNumber,
+                idType: values.idType || undefined,
+                idNumber: values.idNumber || undefined,
             }),
         onSuccess: (data) => {
             toast.success("Patient Created", {
@@ -167,6 +179,48 @@ export default function CreatePatient() {
                                                 <SelectItem value="OTHER">Other</SelectItem>
                                             </SelectContent>
                                         </Select>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+
+                            <FormField
+                                control={form.control}
+                                name="idType"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>ID Type</FormLabel>
+                                        <Select onValueChange={field.onChange} defaultValue={field.value} disabled={mutation.isPending}>
+                                            <FormControl>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Select ID type" />
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent>
+                                                <SelectItem value="AADHAR">Aadhar Card</SelectItem>
+                                                <SelectItem value="PAN">PAN Card</SelectItem>
+                                                <SelectItem value="PASSPORT">Passport</SelectItem>
+                                                <SelectItem value="DRIVING_LICENSE">Driving License</SelectItem>
+                                                <SelectItem value="VOTER_ID">Voter ID</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+
+                            <FormField
+                                control={form.control}
+                                name="idNumber"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>ID Number</FormLabel>
+                                        <FormControl>
+                                            <div className="relative">
+                                                <FileText className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                                                <Input placeholder="Enter ID number" className="pl-9" {...field} disabled={mutation.isPending} />
+                                            </div>
+                                        </FormControl>
                                         <FormMessage />
                                     </FormItem>
                                 )}

@@ -52,6 +52,8 @@ export interface CreatePatientData {
   bloodGroup: string;
   gender: "MALE" | "FEMALE" | "OTHER";
   mobileNumber: string;
+  idType?: string;
+  idNumber?: string;
 }
 
 export async function createPatient(data: CreatePatientData) {

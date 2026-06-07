@@ -1188,21 +1188,27 @@ export default function PatientsPage() {
                                                                     <div className="space-y-2">
                                                                         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Check-in Responses</p>
                                                                         <div className="grid gap-2 sm:grid-cols-2">
-                                                                            {p.questions.map((q: any, qIdx: number) => (
-                                                                                <div key={qIdx} className="text-xs flex flex-col gap-1 bg-muted/20 p-3 rounded-xl border border-dashed">
-                                                                                    <span className="font-medium text-muted-foreground">Question: {q.question}</span>
-                                                                                    <div className="flex items-center gap-1.5 mt-0.5">
-                                                                                        <span className="font-semibold">Response:</span>
-                                                                                        {q.isText ? (
-                                                                                            <span className="text-foreground">{q.answer || "Filled (No text)"}</span>
-                                                                                        ) : (
-                                                                                            <Badge variant="secondary" className="text-[10px] py-0 px-1 bg-primary/10 text-primary border-primary/20">
-                                                                                                {q.answer || "Normal"}
-                                                                                            </Badge>
-                                                                                        )}
+                                                                            {p.questions.map((q: any, qIdx: number) => {
+                                                                                const answerObj = Array.isArray(p.answer)
+                                                                                    ? p.answer.find((a: any) => a.question === q.question)
+                                                                                    : null
+                                                                                const answerVal = answerObj ? answerObj.answer : undefined
+                                                                                return (
+                                                                                    <div key={qIdx} className="text-xs flex flex-col gap-1 bg-muted/20 p-3 rounded-xl border border-dashed">
+                                                                                        <span className="font-medium text-muted-foreground">Question: {q.question}</span>
+                                                                                        <div className="flex items-center gap-1.5 mt-0.5">
+                                                                                            <span className="font-semibold">Response:</span>
+                                                                                            {q.isText ? (
+                                                                                                <span className="text-foreground">{answerVal || "—"}</span>
+                                                                                            ) : (
+                                                                                                <Badge variant="secondary" className="text-[10px] py-0 px-1 bg-primary/10 text-primary border-primary/20">
+                                                                                                    {answerVal || "—"}
+                                                                                                </Badge>
+                                                                                            )}
+                                                                                        </div>
                                                                                     </div>
-                                                                                </div>
-                                                                            ))}
+                                                                                )
+                                                                            })}
                                                                         </div>
                                                                     </div>
                                                                 ) : (

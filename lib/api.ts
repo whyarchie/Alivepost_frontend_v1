@@ -98,6 +98,9 @@ export async function getPatientList(page = 1, limit = 10): Promise<PatientsList
   return apiFetch(`/patient/list?page=${page}&limit=${limit}`);
 }
 
+export async function getPatientSummary(userId: number): Promise<{ success: boolean; data: string }> {
+  return apiFetch(`/patient/summary?userId=${userId}`);
+}
 
 // ─── Medical History ───────────────────────────────────────────
 export interface CreateMedicalHistoryData {

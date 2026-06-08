@@ -8,10 +8,11 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import * as z from "zod"
 import { format } from "date-fns"
+import ReactMarkdown from "react-markdown"
 import {
     Phone, Search, ArrowLeft, User, Heart, Droplets, Calendar as CalendarIcon2,
     Activity, Pill, Plus, Clock, Stethoscope, Building2, FileText,
-    AlertCircle, CheckCircle2, Shield, Loader2, Check, X, ListChecks, Smartphone
+    AlertCircle, CheckCircle2, Shield, Loader2, Check, X, ListChecks, Smartphone, Sparkles
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -54,6 +55,7 @@ import {
     searchMedicine,
     searchDoctors,
     getPatientList,
+    getPatientSummary,
 } from "@/lib/api"
 
 // ─── Zod Schemas ─────────────────────────────────────────────────
@@ -146,6 +148,8 @@ export default function PatientsPage() {
     const [historyDialogOpen, setHistoryDialogOpen] = useState(false)
     const [conditionDialogOpen, setConditionDialogOpen] = useState(false)
     const [medicineDialogOpen, setMedicineDialogOpen] = useState(false)
+    const [summaryDialogOpen, setSummaryDialogOpen] = useState(false)
+    const [summaryData, setSummaryData] = useState<string>("")
     const [selectedConditionId, setSelectedConditionId] = useState<number | null>(null)
 
     const [page, setPage] = useState(1)
@@ -334,6 +338,19 @@ export default function PatientsPage() {
         },
         onError: (error: Error) => {
             toast.error("Failed to assign medicine", { description: error.message })
+        },
+    })
+
+    // ── Summary Mutation ─────────────────────────────────────
+    const summaryMutation = useMutation({
+        mutationFn: (patientId: number) => getPatientSummary(patientId),
+        onSuccess: (data) => {
+            setSummaryData(data.data)
+            setSummaryDialogOpen(true)
+            toast.success("Profile summary generated")
+        },
+        onError: (error: Error) => {
+            toast.error("Failed to generate summary", { description: error.message })
         },
     })
 
@@ -605,17 +622,47 @@ export default function PatientsPage() {
 
                         {/* Patient Info Header */}
                         <div className="rounded-2xl border bg-linear-to-br from-card to-card/80 p-6 shadow-sm">
-                            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                                <div className="flex items-center gap-4">
-                                    <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 text-primary ring-2 ring-primary/20">
-                                        <User className="h-7 w-7" />
+                            <div className="flex flex-col gap-4">
+                                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                                    <div className="flex items-center gap-4">
+                                        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 text-primary ring-2 ring-primary/20">
+                                            <User className="h-7 w-7" />
+                                        </div>
+                                        <div>
+                                            <h2 className="text-2xl font-bold tracking-tight">{patient.name}</h2>
+                                            <p className="text-sm text-muted-foreground flex items-center gap-1.5 mt-0.5">
+                                                <Phone className="h-3.5 w-3.5" /> {patient.mobileNumber}
+                                            </p>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <h2 className="text-2xl font-bold tracking-tight">{patient.name}</h2>
-                                        <p className="text-sm text-muted-foreground flex items-center gap-1.5 mt-0.5">
-                                            <Phone className="h-3.5 w-3.5" /> {patient.mobileNumber}
-                                        </p>
-                                    </div>
+                                    <motion.div
+                                        whileHover={{ scale: 1.05 }}
+                                        whileTap={{ scale: 0.95 }}
+                                    >
+                                        <Button
+                                            size="sm"
+                                            className="gap-2 w-fit bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-0 shadow-lg hover:shadow-xl transition-shadow"
+                                            onClick={() => summaryMutation.mutate(patient.id)}
+                                            disabled={summaryMutation.isPending}
+                                        >
+                                            {summaryMutation.isPending ? (
+                                                <motion.div
+                                                    animate={{ rotate: 360 }}
+                                                    transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                                                >
+                                                    <Loader2 className="h-4 w-4" />
+                                                </motion.div>
+                                            ) : (
+                                                <motion.div
+                                                    animate={{ y: [0, -3, 0] }}
+                                                    transition={{ duration: 2, repeat: Infinity }}
+                                                >
+                                                    <Sparkles className="h-4 w-4" />
+                                                </motion.div>
+                                            )}
+                                            Generate Summary
+                                        </Button>
+                                    </motion.div>
                                 </div>
                                 <div className="flex flex-wrap gap-2">
                                     <Badge variant="outline" className="gap-1.5 px-3 py-1 text-sm">
@@ -637,6 +684,51 @@ export default function PatientsPage() {
                                 </div>
                             </div>
                         </div>
+
+                        {/* Summary Dialog */}
+                        <Dialog open={summaryDialogOpen} onOpenChange={setSummaryDialogOpen}>
+                            <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+                                <DialogHeader>
+                                    <DialogTitle>Patient Profile Summary - {patient.name}</DialogTitle>
+                                    <DialogDescription>Auto-generated comprehensive patient profile</DialogDescription>
+                                </DialogHeader>
+                                <div className="prose prose-sm dark:prose-invert max-w-none rounded-lg border bg-muted/30 p-6">
+                                    <ReactMarkdown
+                                        components={{
+                                            h1: ({node, ...props}) => <h1 className="text-2xl font-bold mt-6 mb-3" {...props} />,
+                                            h2: ({node, ...props}) => <h2 className="text-xl font-semibold mt-4 mb-2" {...props} />,
+                                            h3: ({node, ...props}) => <h3 className="text-lg font-semibold mt-3 mb-1" {...props} />,
+                                            p: ({node, ...props}) => <p className="text-sm text-muted-foreground mb-2" {...props} />,
+                                            ul: ({node, ...props}) => <ul className="list-disc list-inside space-y-1 mb-3" {...props} />,
+                                            ol: ({node, ...props}) => <ol className="list-decimal list-inside space-y-1 mb-3" {...props} />,
+                                            li: ({node, ...props}) => <li className="text-sm text-muted-foreground" {...props} />,
+                                            table: ({node, ...props}) => <table className="w-full text-sm border-collapse my-3" {...props} />,
+                                            th: ({node, ...props}) => <th className="border border-muted-foreground/20 px-3 py-2 text-left bg-muted" {...props} />,
+                                            td: ({node, ...props}) => <td className="border border-muted-foreground/20 px-3 py-2" {...props} />,
+                                            blockquote: ({node, ...props}) => <blockquote className="border-l-4 border-primary pl-4 italic text-muted-foreground my-3" {...props} />,
+                                            code: ({node, ...props}) => <code className="bg-muted px-2 py-1 rounded text-xs font-mono" {...props} />,
+                                        }}
+                                    >
+                                        {summaryData}
+                                    </ReactMarkdown>
+                                </div>
+                                <DialogFooter>
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        onClick={() => {
+                                            navigator.clipboard.writeText(summaryData)
+                                            toast.success("Summary copied to clipboard")
+                                        }}
+                                    >
+                                        Copy to Clipboard
+                                    </Button>
+                                    <Button type="button" variant="default" onClick={() => setSummaryDialogOpen(false)}>
+                                        Close
+                                    </Button>
+                                </DialogFooter>
+                            </DialogContent>
+                        </Dialog>
 
                         {/* Tabs */}
                         <Tabs defaultValue="conditions" className="w-full">

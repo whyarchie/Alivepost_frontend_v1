@@ -98,7 +98,31 @@ export async function getPatientList(page = 1, limit = 10): Promise<PatientsList
   return apiFetch(`/patient/list?page=${page}&limit=${limit}`);
 }
 
-export async function getPatientSummary(userId: number): Promise<{ success: boolean; data: string }> {
+export type PatientStatus = "CRITICAL" | "WATCH" | "STABLE" | "RECOVERED" | "UNKNOWN";
+export type PatientTrend = "DECLINING" | "FLAT" | "IMPROVING" | "INSUFFICIENT_DATA";
+
+export interface RecoveryPoint {
+  date: string;
+  recovery: number | null;
+  condition?: string;
+}
+
+export interface RecommendedAction {
+  priority: "URGENT" | "IMPORTANT" | "ROUTINE";
+  action: string;
+}
+
+export interface PatientSummary {
+  status: PatientStatus;
+  statusReason: string;
+  trend: PatientTrend;
+  criticalInfo: string[];
+  recommendedActions: RecommendedAction[];
+  summaryMarkdown: string;
+  recoveryTrajectory: RecoveryPoint[];
+}
+
+export async function getPatientSummary(userId: number): Promise<{ success: boolean; data: PatientSummary }> {
   return apiFetch(`/patient/summary?userId=${userId}`);
 }
 

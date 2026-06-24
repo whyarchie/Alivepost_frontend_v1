@@ -8,7 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import * as z from "zod"
 import { format } from "date-fns"
-import ReactMarkdown from "react-markdown"
+import { PatientSummaryView } from "@/components/patient-summary-view"
 import {
     Phone, Search, ArrowLeft, User, Heart, Droplets, Calendar as CalendarIcon2,
     Activity, Pill, Plus, Clock, Stethoscope, Building2, FileText,
@@ -56,6 +56,7 @@ import {
     searchDoctors,
     getPatientList,
     getPatientSummary,
+    type PatientSummary,
 } from "@/lib/api"
 
 // ─── Zod Schemas ─────────────────────────────────────────────────
@@ -149,7 +150,7 @@ export default function PatientsPage() {
     const [conditionDialogOpen, setConditionDialogOpen] = useState(false)
     const [medicineDialogOpen, setMedicineDialogOpen] = useState(false)
     const [summaryDialogOpen, setSummaryDialogOpen] = useState(false)
-    const [summaryData, setSummaryData] = useState<string>("")
+    const [summaryData, setSummaryData] = useState<PatientSummary | null>(null)
     const [selectedConditionId, setSelectedConditionId] = useState<number | null>(null)
 
     const [page, setPage] = useState(1)
@@ -692,32 +693,13 @@ export default function PatientsPage() {
                                     <DialogTitle>Patient Profile Summary - {patient.name}</DialogTitle>
                                     <DialogDescription>Auto-generated comprehensive patient profile</DialogDescription>
                                 </DialogHeader>
-                                <div className="prose prose-sm dark:prose-invert max-w-none rounded-lg border bg-muted/30 p-6">
-                                    <ReactMarkdown
-                                        components={{
-                                            h1: ({node, ...props}) => <h1 className="text-2xl font-bold mt-6 mb-3" {...props} />,
-                                            h2: ({node, ...props}) => <h2 className="text-xl font-semibold mt-4 mb-2" {...props} />,
-                                            h3: ({node, ...props}) => <h3 className="text-lg font-semibold mt-3 mb-1" {...props} />,
-                                            p: ({node, ...props}) => <p className="text-sm text-muted-foreground mb-2" {...props} />,
-                                            ul: ({node, ...props}) => <ul className="list-disc list-inside space-y-1 mb-3" {...props} />,
-                                            ol: ({node, ...props}) => <ol className="list-decimal list-inside space-y-1 mb-3" {...props} />,
-                                            li: ({node, ...props}) => <li className="text-sm text-muted-foreground" {...props} />,
-                                            table: ({node, ...props}) => <table className="w-full text-sm border-collapse my-3" {...props} />,
-                                            th: ({node, ...props}) => <th className="border border-muted-foreground/20 px-3 py-2 text-left bg-muted" {...props} />,
-                                            td: ({node, ...props}) => <td className="border border-muted-foreground/20 px-3 py-2" {...props} />,
-                                            blockquote: ({node, ...props}) => <blockquote className="border-l-4 border-primary pl-4 italic text-muted-foreground my-3" {...props} />,
-                                            code: ({node, ...props}) => <code className="bg-muted px-2 py-1 rounded text-xs font-mono" {...props} />,
-                                        }}
-                                    >
-                                        {summaryData}
-                                    </ReactMarkdown>
-                                </div>
+                                {summaryData && <PatientSummaryView summary={summaryData} />}
                                 <DialogFooter>
                                     <Button
                                         type="button"
                                         variant="outline"
                                         onClick={() => {
-                                            navigator.clipboard.writeText(summaryData)
+                                            navigator.clipboard.writeText(summaryData?.summaryMarkdown || "")
                                             toast.success("Summary copied to clipboard")
                                         }}
                                     >

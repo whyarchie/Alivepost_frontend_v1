@@ -45,6 +45,27 @@ export async function getPatientMedicineForHospital(patientId: number) {
   return apiFetch(`/hospital/patientmedicine?patientId=${patientId}`);
 }
 
+// Remove a patient from the authenticated hospital's care.
+// Backend decides the scope: if the patient is also enrolled with other
+// hospitals only this hospital's conditions are removed
+// (data.deleted === "conditions"); otherwise the whole patient is deleted
+// (data.deleted === "patient").
+export interface HospitalDeletePatientResponse {
+  success: boolean;
+  data:
+    | { deleted: "patient"; patient: { id: number; name: string } }
+    | { deleted: "conditions"; patientId: number; conditionsDeleted: number };
+}
+
+export async function hospitalDeletePatient(
+  patientId: number
+): Promise<HospitalDeletePatientResponse> {
+  return apiFetch(`/hospital/patient`, {
+    method: "DELETE",
+    body: JSON.stringify({ patientId }),
+  });
+}
+
 // ─── Patient ───────────────────────────────────────────────────
 export interface CreatePatientData {
   name: string;

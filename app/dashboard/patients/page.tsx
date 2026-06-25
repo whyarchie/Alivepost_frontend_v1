@@ -12,10 +12,14 @@ import { PatientSummaryView } from "@/components/patient-summary-view"
 import {
     Phone, Search, ArrowLeft, User, Heart, Droplets, Calendar as CalendarIcon2,
     Activity, Pill, Plus, Clock, Stethoscope, Building2, FileText,
-    AlertCircle, CheckCircle2, Shield, Loader2, Check, X, ListChecks, Smartphone, Sparkles
+    AlertCircle, CheckCircle2, Shield, Loader2, Check, X, ListChecks, Smartphone, Sparkles, Trash2
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
+import {
+    AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+    AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -56,6 +60,7 @@ import {
     searchDoctors,
     getPatientList,
     getPatientSummary,
+    hospitalDeletePatient,
     type PatientSummary,
 } from "@/lib/api"
 
@@ -105,7 +110,13 @@ function useDebounce<T>(value: T, delay: number): T {
     return debouncedValue
 }
 
+// Condition status (Stable/Critical/Recovered) is hidden for now in the patient
+// list and profile. Flip this to true to restore the badge everywhere it's used.
+const SHOW_CONDITION_STATUS = false
+
 function StatusBadge({ status }: { status: string }) {
+    if (!SHOW_CONDITION_STATUS) return null
+
     const config: Record<string, { label: string; className: string; icon: React.ReactNode }> = {
         STABLE: { label: "Stable", className: "bg-emerald-500/15 text-emerald-700 border-emerald-500/30", icon: <Shield className="h-3 w-3" /> },
         CRITICAL: { label: "Critical", className: "bg-red-500/15 text-red-700 border-red-500/30", icon: <AlertCircle className="h-3 w-3" /> },
@@ -152,6 +163,7 @@ export default function PatientsPage() {
     const [summaryDialogOpen, setSummaryDialogOpen] = useState(false)
     const [summaryData, setSummaryData] = useState<PatientSummary | null>(null)
     const [selectedConditionId, setSelectedConditionId] = useState<number | null>(null)
+    const [removeDialogOpen, setRemoveDialogOpen] = useState(false)
 
     const [page, setPage] = useState(1)
     const limit = 10
@@ -352,6 +364,31 @@ export default function PatientsPage() {
         },
         onError: (error: Error) => {
             toast.error("Failed to generate summary", { description: error.message })
+        },
+    })
+
+    // ── Remove-from-care Mutation ────────────────────────────
+    // The backend decides whether this removes only our hospital's conditions
+    // (patient stays, enrolled elsewhere) or the whole patient record.
+    const removePatientMutation = useMutation({
+        mutationFn: (patientId: number) => hospitalDeletePatient(patientId),
+        onSuccess: (res) => {
+            setRemoveDialogOpen(false)
+            if (res.data.deleted === "patient") {
+                toast.success("Patient removed", {
+                    description: `Your hospital was ${patient?.name ?? "the patient"}'s only enrollment, so the full record was deleted.`,
+                })
+            } else {
+                toast.success("Removed from your care", {
+                    description: `${res.data.conditionsDeleted} condition(s) under your hospital were removed. The patient remains enrolled with other hospitals.`,
+                })
+            }
+            queryClient.invalidateQueries({ queryKey: ["patient-list"] })
+            queryClient.invalidateQueries({ queryKey: ["patient-search-mobile", mobileNumber] })
+            handleBack()
+        },
+        onError: (error: Error) => {
+            toast.error("Failed to remove patient", { description: error.message })
         },
     })
 
@@ -636,34 +673,77 @@ export default function PatientsPage() {
                                             </p>
                                         </div>
                                     </div>
-                                    <motion.div
-                                        whileHover={{ scale: 1.05 }}
-                                        whileTap={{ scale: 0.95 }}
-                                    >
-                                        <Button
-                                            size="sm"
-                                            className="gap-2 w-fit bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-0 shadow-lg hover:shadow-xl transition-shadow"
-                                            onClick={() => summaryMutation.mutate(patient.id)}
-                                            disabled={summaryMutation.isPending}
+                                    <div className="flex items-center gap-2">
+                                        <motion.div
+                                            whileHover={{ scale: 1.05 }}
+                                            whileTap={{ scale: 0.95 }}
                                         >
-                                            {summaryMutation.isPending ? (
-                                                <motion.div
-                                                    animate={{ rotate: 360 }}
-                                                    transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-                                                >
-                                                    <Loader2 className="h-4 w-4" />
-                                                </motion.div>
-                                            ) : (
-                                                <motion.div
-                                                    animate={{ y: [0, -3, 0] }}
-                                                    transition={{ duration: 2, repeat: Infinity }}
-                                                >
-                                                    <Sparkles className="h-4 w-4" />
-                                                </motion.div>
-                                            )}
-                                            Generate Summary
-                                        </Button>
-                                    </motion.div>
+                                            <Button
+                                                size="sm"
+                                                className="gap-2 w-fit bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-0 shadow-lg hover:shadow-xl transition-shadow"
+                                                onClick={() => summaryMutation.mutate(patient.id)}
+                                                disabled={summaryMutation.isPending}
+                                            >
+                                                {summaryMutation.isPending ? (
+                                                    <motion.div
+                                                        animate={{ rotate: 360 }}
+                                                        transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                                                    >
+                                                        <Loader2 className="h-4 w-4" />
+                                                    </motion.div>
+                                                ) : (
+                                                    <motion.div
+                                                        animate={{ y: [0, -3, 0] }}
+                                                        transition={{ duration: 2, repeat: Infinity }}
+                                                    >
+                                                        <Sparkles className="h-4 w-4" />
+                                                    </motion.div>
+                                                )}
+                                                Generate Summary
+                                            </Button>
+                                        </motion.div>
+
+                                        <AlertDialog open={removeDialogOpen} onOpenChange={setRemoveDialogOpen}>
+                                            <Button
+                                                size="sm"
+                                                variant="outline"
+                                                className="gap-2 w-fit text-destructive border-destructive/30 hover:bg-destructive/5 hover:text-destructive"
+                                                onClick={() => setRemoveDialogOpen(true)}
+                                            >
+                                                <Trash2 className="h-4 w-4" /> Remove from care
+                                            </Button>
+                                            <AlertDialogContent>
+                                                <AlertDialogHeader>
+                                                    <AlertDialogTitle>Remove {patient.name} from your care?</AlertDialogTitle>
+                                                    <AlertDialogDescription>
+                                                        This removes the patient&apos;s enrollment with your hospital. This action cannot be undone.
+                                                    </AlertDialogDescription>
+                                                </AlertDialogHeader>
+                                                <div className="rounded-md border bg-muted/40 p-3 text-sm text-muted-foreground space-y-2">
+                                                    <p className="flex gap-2">
+                                                        <Building2 className="h-4 w-4 shrink-0 mt-0.5" />
+                                                        If they are also enrolled with other hospitals, only your hospital&apos;s conditions are removed.
+                                                    </p>
+                                                    <p className="flex gap-2">
+                                                        <AlertCircle className="h-4 w-4 shrink-0 mt-0.5 text-destructive" />
+                                                        If yours is their only enrollment, the entire patient record — conditions, progress and history — is permanently deleted.
+                                                    </p>
+                                                </div>
+                                                <AlertDialogFooter>
+                                                    <AlertDialogCancel disabled={removePatientMutation.isPending}>Cancel</AlertDialogCancel>
+                                                    <AlertDialogAction
+                                                        onClick={(e) => { e.preventDefault(); removePatientMutation.mutate(patient.id) }}
+                                                        className="bg-destructive text-white hover:bg-destructive/90"
+                                                        disabled={removePatientMutation.isPending}
+                                                    >
+                                                        {removePatientMutation.isPending ? (
+                                                            <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Removing...</>
+                                                        ) : "Remove patient"}
+                                                    </AlertDialogAction>
+                                                </AlertDialogFooter>
+                                            </AlertDialogContent>
+                                        </AlertDialog>
+                                    </div>
                                 </div>
                                 <div className="flex flex-wrap gap-2">
                                     <Badge variant="outline" className="gap-1.5 px-3 py-1 text-sm">

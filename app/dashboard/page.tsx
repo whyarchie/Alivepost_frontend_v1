@@ -180,7 +180,8 @@ export default function DashboardPage() {
         <div className="flex flex-col gap-6 py-6 px-4 lg:px-6">
           {/* Stats Cards */}
           <div className="grid grid-cols-1 gap-4 *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card *:data-[slot=card]:shadow-xs @xl/main:grid-cols-2 @5xl/main:grid-cols-4 dark:*:data-[slot=card]:bg-card">
-            <Card className="@container/card">
+            <Card onClick={() => router.push("/dashboard/patients")}
+            className="@container/card">
               <CardHeader>
                 <CardDescription className="flex items-center gap-1.5">
                   <Users className="h-4 w-4 text-blue-600" /> Total Patients
@@ -194,7 +195,8 @@ export default function DashboardPage() {
               </CardFooter>
             </Card>
 
-            <Card className="@container/card">
+            <Card onClick={() => router.push("/dashboard/patients")}
+            className="@container/card">
               <CardHeader>
                 <CardDescription className="flex items-center gap-1.5">
                   <HeartPulse className="h-4 w-4 text-emerald-600" /> Active Patients

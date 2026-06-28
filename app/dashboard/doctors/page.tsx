@@ -32,10 +32,17 @@ export default function DoctorsPage() {
     const [searchValue, setSearchValue] = useState("")
     const [dialogOpen, setDialogOpen] = useState(false)
 
+    const isSearching = searchValue.length > 0
+
+    const allQuery = useQuery({
+        queryKey: ["doctors-all"],
+        queryFn: () => getAllDoctors(),
+    })
+
     const searchQuery = useQuery({
         queryKey: ["doctors-search", searchValue],
         queryFn: () => searchDoctors(searchValue),
-        enabled: searchValue.length > 0,
+        enabled: isSearching,
     })
 
     const form = useForm<z.infer<typeof doctorSchema>>({
@@ -52,14 +59,16 @@ export default function DoctorsPage() {
             })
             form.reset()
             setDialogOpen(false)
-            searchQuery.refetch()
+            allQuery.refetch()
+            if (isSearching) searchQuery.refetch()
         },
         onError: (error: Error) => {
             toast.error("Failed to Create Doctor", { description: error.message })
         },
     })
 
-    const doctors = searchQuery.data?.data || []
+    const activeQuery = isSearching ? searchQuery : allQuery
+    const doctors = activeQuery.data?.data || []
 
     return (
         <div className="flex flex-col gap-6 p-6 md:p-10 mx-auto max-w-4xl w-full">
@@ -124,19 +133,16 @@ export default function DoctorsPage() {
             </div>
 
             {/* Results */}
-            {searchValue.length === 0 ? (
-                <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed py-16">
-                    <Stethoscope className="h-10 w-10 text-muted-foreground/50 mb-3" />
-                    <p className="text-sm text-muted-foreground">Type a name to search for doctors</p>
-                </div>
-            ) : searchQuery.isLoading ? (
+            {activeQuery.isLoading ? (
                 <div className="flex items-center justify-center py-16">
                     <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                 </div>
             ) : doctors.length === 0 ? (
                 <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed py-16">
                     <User className="h-10 w-10 text-muted-foreground/50 mb-3" />
-                    <p className="text-sm text-muted-foreground">No doctors found</p>
+                    <p className="text-sm text-muted-foreground">
+                        {isSearching ? "No doctors found" : "No doctors yet. Add your first doctor."}
+                    </p>
                 </div>
             ) : (
                 <div className="rounded-xl border bg-card shadow-sm overflow-hidden">

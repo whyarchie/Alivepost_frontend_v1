@@ -267,8 +267,8 @@ export async function createDoctor(data: { name: string; username: string }) {
   });
 }
 
-export async function getAllDoctors(hospitalId: number) {
-  return apiFetch(`/doctor/all?id=${hospitalId}`);
+export async function getAllDoctors() {
+  return apiFetch(`/doctor/all`);
 }
 
 export async function searchDoctors(name: string) {

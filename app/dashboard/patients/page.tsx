@@ -166,7 +166,7 @@ export default function PatientsPage() {
     const [removeDialogOpen, setRemoveDialogOpen] = useState(false)
 
     const [page, setPage] = useState(1)
-    const limit = 10
+    const [limit, setLimit] = useState(10)
 
     const getPageNumbers = () => {
         const pages = []
@@ -198,7 +198,7 @@ export default function PatientsPage() {
 
     // Paginated patient list query
     const patientListQuery = useQuery({
-        queryKey: ["patient-list", page],
+        queryKey: ["patient-list", page, limit],
         queryFn: () => getPatientList(page, limit),
     })
 
@@ -560,10 +560,31 @@ export default function PatientsPage() {
                                     </Table>
                                     
                                     {/* PAGINATION */}
-                                    {patientListQuery.data?.data?.pagination && patientListQuery.data.data.pagination.totalPages > 1 && (
+                                    {patientListQuery.data?.data?.pagination && patientListQuery.data.data.pagination.total > 0 && (
                                         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 border-t px-4 py-4 bg-muted/20">
-                                            <div className="text-sm text-muted-foreground order-2 sm:order-1">
-                                                Showing page <span className="font-semibold">{page}</span> of <span className="font-semibold">{patientListQuery.data.data.pagination.totalPages}</span> ({patientListQuery.data.data.pagination.total} patients)
+                                            <div className="flex items-center gap-4 order-2 sm:order-1">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-sm text-muted-foreground">Rows per page</span>
+                                                    <Select
+                                                        value={String(limit)}
+                                                        onValueChange={(value) => {
+                                                            setLimit(Number(value))
+                                                            setPage(1)
+                                                        }}
+                                                    >
+                                                        <SelectTrigger className="h-8 w-[72px]">
+                                                            <SelectValue />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            {[1, 5, 10, 20, 50].map((size) => (
+                                                                <SelectItem key={size} value={String(size)}>{size}</SelectItem>
+                                                            ))}
+                                                        </SelectContent>
+                                                    </Select>
+                                                </div>
+                                                <div className="text-sm text-muted-foreground">
+                                                    Showing page <span className="font-semibold">{page}</span> of <span className="font-semibold">{patientListQuery.data.data.pagination.totalPages}</span> ({patientListQuery.data.data.pagination.total} patients)
+                                                </div>
                                             </div>
                                             <div className="order-1 sm:order-2">
                                                 <Pagination className="justify-end w-auto">

@@ -222,6 +222,10 @@ export async function getPatientProgress(conditionId: number) {
 }
 
 // ─── Disease ───────────────────────────────────────────────────
+export async function getAllDiseases() {
+  return apiFetch(`/disease/all`);
+}
+
 export async function searchDisease(value: string) {
   return apiFetch(`/disease/search?value=${encodeURIComponent(value)}`);
 }
@@ -238,6 +242,10 @@ export async function getDiseaseById(id: number) {
 }
 
 // ─── Medicine ──────────────────────────────────────────────────
+export async function getAllMedicines() {
+  return apiFetch(`/medicine/all`);
+}
+
 export async function searchMedicine(value: string) {
   return apiFetch(`/medicine/search?value=${encodeURIComponent(value)}`);
 }

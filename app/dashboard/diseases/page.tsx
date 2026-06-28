@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useMutation, useQuery } from "@tanstack/react-query"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
@@ -22,7 +22,10 @@ import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select"
 import { toast } from "sonner"
-import { searchDisease, createDisease } from "@/lib/api"
+import { searchDisease, createDisease, getAllDiseases } from "@/lib/api"
+import { DataPagination } from "@/components/data-pagination"
+
+const PAGE_SIZE = 5
 
 const diseaseSchema = z.object({
     name: z.string().min(1, "Disease name is required"),
@@ -33,11 +36,19 @@ const diseaseSchema = z.object({
 export default function DiseasesPage() {
     const [searchValue, setSearchValue] = useState("")
     const [dialogOpen, setDialogOpen] = useState(false)
+    const [page, setPage] = useState(1)
+
+    const isSearching = searchValue.length > 0
+
+    const allQuery = useQuery({
+        queryKey: ["disease-all"],
+        queryFn: () => getAllDiseases(),
+    })
 
     const searchQuery = useQuery({
         queryKey: ["disease-search", searchValue],
         queryFn: () => searchDisease(searchValue),
-        enabled: searchValue.length > 0,
+        enabled: isSearching,
     })
 
     const form = useForm<z.infer<typeof diseaseSchema>>({
@@ -54,14 +65,23 @@ export default function DiseasesPage() {
             })
             form.reset()
             setDialogOpen(false)
-            searchQuery.refetch()
+            allQuery.refetch()
+            if (isSearching) searchQuery.refetch()
         },
         onError: (error: Error) => {
             toast.error("Failed to Create Disease", { description: error.message })
         },
     })
 
-    const diseases = searchQuery.data?.data || []
+    const activeQuery = isSearching ? searchQuery : allQuery
+    const diseases = activeQuery.data?.data || []
+
+    const totalPages = Math.max(1, Math.ceil(diseases.length / PAGE_SIZE))
+    const currentPage = Math.min(page, totalPages)
+    const pagedDiseases = diseases.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
+
+    // Reset to the first page whenever the result set changes.
+    useEffect(() => { setPage(1) }, [searchValue, diseases.length])
 
     return (
         <div className="flex flex-col gap-6 p-6 md:p-10 mx-auto max-w-4xl w-full">
@@ -135,23 +155,20 @@ export default function DiseasesPage() {
             </div>
 
             {/* Results */}
-            {searchValue.length === 0 ? (
-                <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed py-16">
-                    <Microscope className="h-10 w-10 text-muted-foreground/50 mb-3" />
-                    <p className="text-sm text-muted-foreground">Type a name to search for diseases</p>
-                </div>
-            ) : searchQuery.isLoading ? (
+            {activeQuery.isLoading ? (
                 <div className="flex items-center justify-center py-16">
                     <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                 </div>
             ) : diseases.length === 0 ? (
                 <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed py-16">
                     <AlertCircle className="h-10 w-10 text-muted-foreground/50 mb-3" />
-                    <p className="text-sm text-muted-foreground">No diseases found</p>
+                    <p className="text-sm text-muted-foreground">
+                        {isSearching ? "No diseases found" : "No diseases yet. Add your first disease."}
+                    </p>
                 </div>
             ) : (
                 <div className="grid gap-3">
-                    {diseases.map((disease: any) => (
+                    {pagedDiseases.map((disease: any) => (
                         <div
                             key={disease.id}
                             className="flex items-start justify-between rounded-xl border bg-card p-4 shadow-sm hover:shadow-md transition-shadow"
@@ -180,6 +197,10 @@ export default function DiseasesPage() {
                         </div>
                     ))}
                 </div>
+            )}
+
+            {!activeQuery.isLoading && diseases.length > 0 && (
+                <DataPagination page={currentPage} totalPages={totalPages} onPageChange={setPage} />
             )}
         </div>
     )

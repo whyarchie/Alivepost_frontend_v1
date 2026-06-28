@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useMutation, useQuery } from "@tanstack/react-query"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
@@ -22,6 +22,9 @@ import {
 } from "@/components/ui/table"
 import { toast } from "sonner"
 import { createDoctor, searchDoctors, getAllDoctors } from "@/lib/api"
+import { DataPagination } from "@/components/data-pagination"
+
+const PAGE_SIZE = 5
 
 const doctorSchema = z.object({
     name: z.string().min(2, "Name must be at least 2 characters"),
@@ -31,6 +34,7 @@ const doctorSchema = z.object({
 export default function DoctorsPage() {
     const [searchValue, setSearchValue] = useState("")
     const [dialogOpen, setDialogOpen] = useState(false)
+    const [page, setPage] = useState(1)
 
     const isSearching = searchValue.length > 0
 
@@ -70,6 +74,13 @@ export default function DoctorsPage() {
     const activeQuery = isSearching ? searchQuery : allQuery
     const doctors = activeQuery.data?.data || []
 
+    const totalPages = Math.max(1, Math.ceil(doctors.length / PAGE_SIZE))
+    const currentPage = Math.min(page, totalPages)
+    const pagedDoctors = doctors.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
+
+    // Reset to the first page whenever the result set changes.
+    useEffect(() => { setPage(1) }, [searchValue, doctors.length])
+
     return (
         <div className="flex flex-col gap-6 p-6 md:p-10 mx-auto max-w-4xl w-full">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -92,9 +103,9 @@ export default function DoctorsPage() {
                             <form onSubmit={form.handleSubmit((v) => createMutation.mutate(v))} className="space-y-4">
                                 <FormField control={form.control} name="name" render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Full Name</FormLabel>
+                                        <FormLabel>Full Name <span className="text-destructive">*</span></FormLabel>
                                         <FormControl>
-                                            <Input placeholder="Dr. Gregory House" {...field} disabled={createMutation.isPending} />
+                                            <Input placeholder="Dr. Gregory House" required {...field} disabled={createMutation.isPending} />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
@@ -155,7 +166,7 @@ export default function DoctorsPage() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {doctors.map((doc: any) => (
+                            {pagedDoctors.map((doc: any) => (
                                 <TableRow key={doc.id}>
                                     <TableCell className="font-medium">
                                         <div className="flex items-center gap-2">
@@ -174,6 +185,10 @@ export default function DoctorsPage() {
                         </TableBody>
                     </Table>
                 </div>
+            )}
+
+            {!activeQuery.isLoading && doctors.length > 0 && (
+                <DataPagination page={currentPage} totalPages={totalPages} onPageChange={setPage} />
             )}
         </div>
     )

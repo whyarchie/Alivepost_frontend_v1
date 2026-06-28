@@ -82,7 +82,7 @@ const conditionSchema = z.object({
     status: z.enum(["STABLE", "CRITICAL", "RECOVERED"]),
     startDate: z.date({ required_error: "Start date is required" }),
     endDate: z.date().optional(),
-    doctorId: z.string().optional(),
+    doctorId: z.string().min(1, "Select a doctor"),
 })
 
 const medicineAssignSchema = z.object({
@@ -259,6 +259,17 @@ export default function PatientsPage() {
         setMobileNumber(values.mobileNumber)
     }
 
+    // Auto-open a patient's profile when arriving with a ?mobile= query param
+    // (e.g. redirect right after creating a patient).
+    useEffect(() => {
+        const mobile = new URLSearchParams(window.location.search).get("mobile")
+        if (mobile) {
+            setMobileNumber(mobile)
+            phoneForm.setValue("mobileNumber", mobile)
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [])
+
     function handleBack() {
         setMobileNumber(null)
         phoneForm.reset()
@@ -303,7 +314,7 @@ export default function PatientsPage() {
                 patientId: patient?.id,
                 diseaseId: parseInt(values.diseaseId),
                 hospitalId: 1, // Must be positive for Zod schema; backend overrides with user.id
-                doctorId: values.doctorId ? parseInt(values.doctorId) : undefined,
+                doctorId: parseInt(values.doctorId),
                 status: values.status,
                 startDate: values.startDate.toISOString(),
                 endDate: values.endDate?.toISOString(),
@@ -917,7 +928,7 @@ export default function PatientsPage() {
                                                     </div>
                                                     <FormField control={conditionForm.control} name="doctorId" render={({ field }) => (
                                                         <FormItem className="relative">
-                                                            <FormLabel>Doctor (optional)</FormLabel>
+                                                            <FormLabel>Doctor <span className="text-destructive">*</span></FormLabel>
                                                             <FormControl>
                                                                 <Input
                                                                     placeholder="Search doctor..."

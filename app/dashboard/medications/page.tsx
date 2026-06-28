@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useMutation, useQuery } from "@tanstack/react-query"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
@@ -24,7 +24,10 @@ import {
     Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table"
 import { toast } from "sonner"
-import { searchMedicine, createMedicine } from "@/lib/api"
+import { searchMedicine, createMedicine, getAllMedicines } from "@/lib/api"
+import { DataPagination } from "@/components/data-pagination"
+
+const PAGE_SIZE = 5
 
 const DOSAGE_FORMS = [
     "TABLET", "CAPSULE", "SYRUP", "INJECTION", "OINTMENT",
@@ -42,11 +45,19 @@ const medicineSchema = z.object({
 export default function MedicationsPage() {
     const [searchValue, setSearchValue] = useState("")
     const [dialogOpen, setDialogOpen] = useState(false)
+    const [page, setPage] = useState(1)
+
+    const isSearching = searchValue.length > 0
+
+    const allQuery = useQuery({
+        queryKey: ["medicine-all"],
+        queryFn: () => getAllMedicines(),
+    })
 
     const searchQuery = useQuery({
         queryKey: ["medicine-search", searchValue],
         queryFn: () => searchMedicine(searchValue),
-        enabled: searchValue.length > 0,
+        enabled: isSearching,
     })
 
     const form = useForm<z.infer<typeof medicineSchema>>({
@@ -62,14 +73,23 @@ export default function MedicationsPage() {
             })
             form.reset()
             setDialogOpen(false)
-            searchQuery.refetch()
+            allQuery.refetch()
+            if (isSearching) searchQuery.refetch()
         },
         onError: (error: Error) => {
             toast.error("Failed to Create Medicine", { description: error.message })
         },
     })
 
-    const medicines = searchQuery.data?.data || []
+    const activeQuery = isSearching ? searchQuery : allQuery
+    const medicines = activeQuery.data?.data || []
+
+    const totalPages = Math.max(1, Math.ceil(medicines.length / PAGE_SIZE))
+    const currentPage = Math.min(page, totalPages)
+    const pagedMedicines = medicines.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
+
+    // Reset to the first page whenever the result set changes.
+    useEffect(() => { setPage(1) }, [searchValue, medicines.length])
 
     return (
         <div className="flex flex-col gap-6 p-6 md:p-10 mx-auto max-w-5xl w-full">
@@ -162,19 +182,16 @@ export default function MedicationsPage() {
             </div>
 
             {/* Results */}
-            {searchValue.length === 0 ? (
-                <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed py-16">
-                    <Pill className="h-10 w-10 text-muted-foreground/50 mb-3" />
-                    <p className="text-sm text-muted-foreground">Type a name to search for medicines</p>
-                </div>
-            ) : searchQuery.isLoading ? (
+            {activeQuery.isLoading ? (
                 <div className="flex items-center justify-center py-16">
                     <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                 </div>
             ) : medicines.length === 0 ? (
                 <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed py-16">
                     <Package className="h-10 w-10 text-muted-foreground/50 mb-3" />
-                    <p className="text-sm text-muted-foreground">No medicines found</p>
+                    <p className="text-sm text-muted-foreground">
+                        {isSearching ? "No medicines found" : "No medicines yet. Add your first medicine."}
+                    </p>
                 </div>
             ) : (
                 <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
@@ -189,7 +206,7 @@ export default function MedicationsPage() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {medicines.map((med: any) => (
+                            {pagedMedicines.map((med: any) => (
                                 <TableRow key={med.id}>
                                     <TableCell className="font-medium">
                                         <div className="flex items-center gap-2">
@@ -210,6 +227,10 @@ export default function MedicationsPage() {
                         </TableBody>
                     </Table>
                 </div>
+            )}
+
+            {!activeQuery.isLoading && medicines.length > 0 && (
+                <DataPagination page={currentPage} totalPages={totalPages} onPageChange={setPage} />
             )}
         </div>
     )

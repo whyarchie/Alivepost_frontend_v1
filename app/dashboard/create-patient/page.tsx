@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form"
 import * as z from "zod"
 import { UserPlus, Phone, Loader2, FileText } from "lucide-react"
 import { useMutation } from "@tanstack/react-query"
+import { useRouter } from "next/navigation"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -29,6 +30,7 @@ const formSchema = z.object({
 })
 
 export default function CreatePatient() {
+    const router = useRouter()
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
         defaultValues: {
@@ -53,11 +55,14 @@ export default function CreatePatient() {
                 idType: values.idType || undefined,
                 idNumber: values.idNumber || undefined,
             }),
-        onSuccess: (data) => {
+        onSuccess: (data, variables) => {
             toast.success("Patient Created", {
                 description: `Patient ${data?.data?.name || ""} has been successfully registered.`,
             })
             form.reset()
+            // Open the newly created patient's profile (the patients page loads a
+            // profile by mobile number).
+            router.push(`/dashboard/patients?mobile=${encodeURIComponent(variables.mobileNumber)}`)
         },
         onError: (error: Error) => {
             toast.error("Failed to Create Patient", {
@@ -198,10 +203,10 @@ export default function CreatePatient() {
                                             </FormControl>
                                             <SelectContent>
                                                 <SelectItem value="AADHAR">Aadhar Card</SelectItem>
-                                                <SelectItem value="PAN">PAN Card</SelectItem>
                                                 <SelectItem value="PASSPORT">Passport</SelectItem>
                                                 <SelectItem value="DRIVING_LICENSE">Driving License</SelectItem>
-                                                <SelectItem value="VOTER_ID">Voter ID</SelectItem>
+                                                <SelectItem value="ABHA_ID">ABHA ID</SelectItem>
+                                                <SelectItem value="PATIENT_ID">Patient ID</SelectItem>
                                             </SelectContent>
                                         </Select>
                                         <FormMessage />

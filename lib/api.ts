@@ -45,6 +45,27 @@ export async function getPatientMedicineForHospital(patientId: number) {
   return apiFetch(`/hospital/patientmedicine?patientId=${patientId}`);
 }
 
+// The authenticated hospital's own profile. `balance` is the wallet balance in
+// paise; `perDayPatientCost` is in rupees per enrolled patient per day.
+export interface HospitalMe {
+  id: number;
+  name: string;
+  helplineNumber: string;
+  contactNumber: string;
+  email: string;
+  address: string;
+  userId: string;
+  perDayPatientCost: number;
+  balance: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Backend route: GET /hospital/me — requires a hospital token.
+export async function getHospitalMe(): Promise<{ success: boolean; data: HospitalMe }> {
+  return apiFetch("/hospital/me");
+}
+
 // Remove a patient from the authenticated hospital's care.
 // Backend decides the scope: if the patient is also enrolled with other
 // hospitals only this hospital's conditions are removed
@@ -63,6 +84,80 @@ export async function hospitalDeletePatient(
   return apiFetch(`/hospital/patient`, {
     method: "DELETE",
     body: JSON.stringify({ patientId }),
+  });
+}
+
+// ─── Hospital Wallet / Razorpay Payments ───────────────────────
+// The Razorpay order returned by the backend. Monetary fields are in the
+// smallest currency unit (paise for INR), matching the Razorpay API.
+export interface RazorpayOrder {
+  id: string;
+  entity: string;
+  amount: number;
+  amount_paid: number;
+  amount_due: number;
+  currency: string;
+  receipt: string;
+  status: string;
+  created_at: number;
+}
+
+// Prefill details for the Razorpay checkout, sourced from the hospital record
+// in the database so the payer never has to type their contact/email.
+export interface RazorpayPrefill {
+  name: string;
+  email: string;
+  contact: string;
+}
+
+export interface CreateHospitalOrderResponse {
+  success: boolean;
+  data: {
+    order: RazorpayOrder;
+    prefill: RazorpayPrefill;
+  };
+}
+
+// Creates a Razorpay order to top up the authenticated hospital's balance.
+// `amount` is in rupees; the backend converts it to paise before creating the
+// order (POST /hospital/order).
+export async function createHospitalOrder(
+  amount: number
+): Promise<CreateHospitalOrderResponse> {
+  return apiFetch("/hospital/order", {
+    method: "POST",
+    body: JSON.stringify({ amount }),
+  });
+}
+
+// Fields Razorpay Checkout hands back on a successful payment. Sent to the
+// backend so it can verify the signature and credit the balance.
+export interface VerifyHospitalPaymentData {
+  razorpay_order_id: string;
+  razorpay_payment_id: string;
+  razorpay_signature: string;
+}
+
+export interface VerifyHospitalPaymentResponse {
+  success: boolean;
+  data: {
+    // true when this payment was already settled (verify is idempotent).
+    alreadyProcessed: boolean;
+    orderId: string;
+    paymentId: string;
+    // The hospital's new balance in paise; present only on the first settlement.
+    balance?: number;
+  };
+}
+
+// Verifies a completed Razorpay checkout and credits the hospital balance
+// (POST /hospital/verify). Idempotent on the backend.
+export async function verifyHospitalPayment(
+  data: VerifyHospitalPaymentData
+): Promise<VerifyHospitalPaymentResponse> {
+  return apiFetch("/hospital/verify", {
+    method: "POST",
+    body: JSON.stringify(data),
   });
 }
 
@@ -174,7 +269,22 @@ export interface CreateConditionData {
   endDate?: string;
 }
 
-export async function createPatientCondition(data: CreateConditionData) {
+// What the enrollment cost: days × perDayPatientCost (rupees/day) with half of
+// that total deducted from the hospital wallet up front. `totalCost`, `charged`
+// and `balance` are in paise.
+export interface ConditionBilling {
+  days: number;
+  perDayPatientCost: number;
+  totalCost: number;
+  charged: number;
+  balance: number;
+}
+
+// Creating a condition enrolls the patient and charges the hospital wallet.
+// Fails with 402 (surfaced as an Error) when the balance is insufficient.
+export async function createPatientCondition(
+  data: CreateConditionData
+): Promise<{ success: boolean; data: { id: number; billing?: ConditionBilling } & Record<string, any> }> {
   return apiFetch("/patient/condition", {
     method: "POST",
     body: JSON.stringify(data),

@@ -61,6 +61,7 @@ import {
     getPatientList,
     getPatientSummary,
     hospitalDeletePatient,
+    getHospitalMe,
     type PatientSummary,
 } from "@/lib/api"
 
@@ -202,6 +203,13 @@ export default function PatientsPage() {
         queryFn: () => getPatientList(page, limit),
     })
 
+    // Own hospital profile — wallet balance (paise) and per-day patient cost
+    // (rupees), used to show the enrollment cost before adding a condition.
+    const hospitalMeQuery = useQuery({
+        queryKey: ["hospital-me"],
+        queryFn: getHospitalMe,
+    })
+
     // Search inputs for selects
     const [diseaseSearch, setDiseaseSearch] = useState("")
     const [medicineSearch, setMedicineSearch] = useState("")
@@ -319,11 +327,18 @@ export default function PatientsPage() {
                 startDate: values.startDate.toISOString(),
                 endDate: values.endDate?.toISOString(),
             }),
-        onSuccess: () => {
-            toast.success("Condition Added")
+        onSuccess: (res) => {
+            const billing = res?.data?.billing
+            toast.success("Condition Added", {
+                description: billing
+                    ? `Charged ₹${(billing.charged / 100).toLocaleString("en-IN")} now (50% of ₹${(billing.totalCost / 100).toLocaleString("en-IN")} for ${billing.days} day(s)). Wallet balance: ₹${(billing.balance / 100).toLocaleString("en-IN")}`
+                    : undefined,
+            })
             conditionForm.reset()
             setConditionDialogOpen(false)
             queryClient.invalidateQueries({ queryKey: ["patient-search-mobile", mobileNumber] })
+            // Enrollment deducted from the wallet — refresh the cached balance.
+            queryClient.invalidateQueries({ queryKey: ["hospital-me"] })
         },
         onError: (error: Error) => {
             toast.error("Failed to add condition", { description: error.message })
@@ -926,6 +941,42 @@ export default function PatientsPage() {
                                                             <DatePickerField field={field} label="End Date" placeholder="Ongoing" />
                                                         )} />
                                                     </div>
+                                                    {(() => {
+                                                        // Enrollment is billed per day (inclusive of start and end
+                                                        // date; no end date = 1 day) at the hospital's per-day cost;
+                                                        // half of the total is deducted from the wallet up front.
+                                                        const hosp = hospitalMeQuery.data?.data
+                                                        const start = conditionForm.watch("startDate")
+                                                        if (!hosp || !start) return null
+                                                        const end = conditionForm.watch("endDate")
+                                                        const MS_PER_DAY = 24 * 60 * 60 * 1000
+                                                        const days = end
+                                                            ? Math.max(1, Math.floor((end.getTime() - start.getTime()) / MS_PER_DAY) + 1)
+                                                            : 1
+                                                        const cost = days * hosp.perDayPatientCost
+                                                        const upfront = cost / 2
+                                                        const insufficient = upfront * 100 > hosp.balance
+                                                        return (
+                                                            <div className={cn(
+                                                                "rounded-md border p-3 text-sm",
+                                                                insufficient
+                                                                    ? "border-destructive/50 bg-destructive/5 text-destructive"
+                                                                    : "bg-muted/50 text-muted-foreground"
+                                                            )}>
+                                                                <p>
+                                                                    Enrollment cost: {days} day(s) × ₹{hosp.perDayPatientCost.toLocaleString("en-IN")} ={" "}
+                                                                    <span className="font-semibold">₹{cost.toLocaleString("en-IN")}</span>
+                                                                    {" "}· 50% now:{" "}
+                                                                    <span className="font-semibold">₹{upfront.toLocaleString("en-IN")}</span>
+                                                                </p>
+                                                                <p className="mt-1 text-xs">
+                                                                    {insufficient
+                                                                        ? `Insufficient wallet balance (₹${(hosp.balance / 100).toLocaleString("en-IN")}). Top up in Billing & Wallet before enrolling.`
+                                                                        : `Half of the total is deducted from your wallet now (balance ₹${(hosp.balance / 100).toLocaleString("en-IN")}).`}
+                                                                </p>
+                                                            </div>
+                                                        )
+                                                    })()}
                                                     <FormField control={conditionForm.control} name="doctorId" render={({ field }) => (
                                                         <FormItem className="relative">
                                                             <FormLabel>Doctor <span className="text-destructive">*</span></FormLabel>

@@ -35,10 +35,16 @@ export function LoginForm({
         document.cookie = `token=${token}; path=/; max-age=${60 * 60 * 24 * 7}; samesite=lax`
       }
 
-      // Store hospital info for sidebar
+      // Store hospital info for the sidebar and for prefilling checkout
+      // (contact number / email are used by the Razorpay top-up flow).
       const hospitalInfo = {
+        id: data?.data?.id ?? null,
         name: data?.data?.name || "Hospital",
         userId: data?.data?.userId || userId,
+        contactNumber: data?.data?.contactNumber || "",
+        email: data?.data?.email || "",
+        // Rupees charged to the wallet per enrolled patient per day.
+        perDayPatientCost: data?.data?.perDayPatientCost ?? null,
       }
       localStorage.setItem("hospitalInfo", JSON.stringify(hospitalInfo))
 

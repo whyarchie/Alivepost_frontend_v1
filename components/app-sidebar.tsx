@@ -21,7 +21,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import { Pill, User, Stethoscope, UserRoundPlus, Microscope, Building2, FileQuestion } from "lucide-react"
+import { Pill, User, Stethoscope, UserRoundPlus, Microscope, Building2, FileQuestion, Wallet } from "lucide-react"
 
 const navMain = [
   { title: "Dashboard", url: "/dashboard", icon: IconDashboard },
@@ -31,6 +31,7 @@ const navMain = [
   { title: "Medications", url: "/dashboard/medications", icon: Pill },
   { title: "Diseases", url: "/dashboard/diseases", icon: Microscope },
   { title: "Progress Builder", url: "/dashboard/create-progress", icon: FileQuestion },
+  { title: "Billing", url: "/dashboard/billing", icon: Wallet },
 ]
 
 const navSecondary = [

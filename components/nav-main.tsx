@@ -3,6 +3,7 @@
 import * as React from "react"
 import { IconCirclePlusFilled, IconMail } from "@tabler/icons-react"
 import Link from "next/link"
+import { usePathname } from "next/navigation"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -22,6 +23,13 @@ export function NavMain({
     icon?: React.ElementType
   }[]
 }) {
+  const pathname = usePathname()
+
+  const isActive = (url: string) =>
+    url === "/dashboard"
+      ? pathname === url
+      : pathname === url || pathname.startsWith(url + "/")
+
   return (
     <SidebarGroup>
       <SidebarGroupContent className="flex flex-col gap-2">
@@ -43,7 +51,7 @@ export function NavMain({
         <SidebarMenu>
           {items.map((item) => (
             <SidebarMenuItem key={item.title}>
-              <SidebarMenuButton asChild tooltip={item.title}>
+              <SidebarMenuButton asChild tooltip={item.title} isActive={isActive(item.url)}>
                 <Link href={item.url}>
                   {item.icon && <item.icon />}
                   <span>{item.title}</span>

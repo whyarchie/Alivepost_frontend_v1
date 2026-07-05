@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import Link from "next/link"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { motion, AnimatePresence } from "framer-motion"
@@ -148,6 +148,187 @@ function DatePickerField({ field, label, placeholder }: { field: any; label: str
             </FormControl>
             <FormMessage />
         </FormItem>
+    )
+}
+
+// ─── Tracked Progress Calendar ───────────────────────────────────
+// A single check-in flattened out of its parent condition, so the calendar
+// (date) becomes the primary axis rather than the condition.
+interface FlatProgress {
+    id: number | string
+    scheduledDate: string
+    followUpStatus?: string | null
+    percentageRecovery?: number | null
+    description?: string | null
+    questions?: any[]
+    answer?: any
+    conditionName: string
+    conditionStatus: string
+}
+
+// Renders the patient's tracked progress as a month calendar: days that have
+// check-ins are dotted, and clicking a day lists that day's check-ins.
+function ProgressCalendar({ conditions }: { conditions: any[] }) {
+    // Flatten every check-in across all conditions, tagging each with the
+    // condition it belongs to (we no longer group the UI by condition).
+    const entries = useMemo<FlatProgress[]>(() => {
+        const list: FlatProgress[] = []
+        for (const c of conditions) {
+            for (const p of c.patientProgress || []) {
+                list.push({
+                    ...p,
+                    conditionName: c.disease?.name || `Disease #${c.diseaseId}`,
+                    conditionStatus: c.status,
+                })
+            }
+        }
+        return list
+    }, [conditions])
+
+    // Bucket the check-ins by calendar day (local yyyy-MM-dd).
+    const byDay = useMemo(() => {
+        const map = new Map<string, FlatProgress[]>()
+        for (const e of entries) {
+            if (!e.scheduledDate) continue
+            const key = format(new Date(e.scheduledDate), "yyyy-MM-dd")
+            const arr = map.get(key)
+            if (arr) arr.push(e)
+            else map.set(key, [e])
+        }
+        return map
+    }, [entries])
+
+    // Dates that should show a dot on the calendar.
+    const progressDates = useMemo(
+        () => Array.from(byDay.keys()).map((k) => new Date(`${k}T00:00:00`)),
+        [byDay]
+    )
+
+    // Open on — and pre-select — the most recent check-in.
+    const latestDate = useMemo(() => {
+        if (progressDates.length === 0) return undefined
+        return progressDates.reduce((a, b) => (a.getTime() > b.getTime() ? a : b))
+    }, [progressDates])
+
+    const [selectedDate, setSelectedDate] = useState<Date | undefined>(latestDate)
+    const [month, setMonth] = useState<Date>(latestDate ?? new Date())
+
+    const selectedKey = selectedDate ? format(selectedDate, "yyyy-MM-dd") : ""
+    const selectedEntries = byDay.get(selectedKey) || []
+
+    return (
+        <div className="grid gap-6 lg:grid-cols-[auto_1fr] items-start">
+            {/* Month calendar */}
+            <div className="rounded-xl border bg-card p-4 shadow-sm w-fit mx-auto lg:mx-0">
+                <Calendar
+                    mode="single"
+                    month={month}
+                    onMonthChange={setMonth}
+                    selected={selectedDate}
+                    // Ignore deselect clicks so a day always stays selected.
+                    onSelect={(d) => { if (d) setSelectedDate(d) }}
+                    modifiers={{ hasProgress: progressDates }}
+                    modifiersClassNames={{
+                        hasProgress:
+                            "font-bold text-primary after:absolute after:bottom-1 after:left-1/2 after:-translate-x-1/2 after:h-1.5 after:w-1.5 after:rounded-full after:bg-primary after:content-['']",
+                    }}
+                    className="p-0"
+                />
+                <div className="mt-3 flex items-center gap-2 border-t pt-3 text-xs text-muted-foreground">
+                    <span className="h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
+                    Days with check-ins
+                </div>
+            </div>
+
+            {/* Check-ins for the selected day */}
+            <div className="space-y-3 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                    <CalendarIcon2 className="h-4 w-4 text-primary" />
+                    <h4 className="font-semibold">
+                        {selectedDate ? format(selectedDate, "EEEE, dd MMM yyyy") : "Select a date"}
+                    </h4>
+                    {selectedEntries.length > 0 && (
+                        <Badge variant="secondary" className="text-xs">
+                            {selectedEntries.length} check-in{selectedEntries.length > 1 ? "s" : ""}
+                        </Badge>
+                    )}
+                </div>
+
+                {selectedEntries.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed py-12 text-center">
+                        <ListChecks className="h-10 w-10 text-muted-foreground/40 mb-3" />
+                        <p className="text-sm text-muted-foreground">No check-ins on this date</p>
+                        <p className="text-xs text-muted-foreground/70 mt-1">Pick a dotted day to view its check-ins.</p>
+                    </div>
+                ) : (
+                    <div className="grid gap-4">
+                        {selectedEntries.map((p) => (
+                            <div key={p.id} className="rounded-xl border bg-card p-4 shadow-sm hover:shadow-md transition-shadow space-y-4">
+                                <div className="flex items-center justify-between flex-wrap gap-2">
+                                    <div className="flex items-center gap-2.5">
+                                        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary shrink-0">
+                                            <Activity className="h-5 w-5" />
+                                        </div>
+                                        <div>
+                                            <p className="font-semibold text-sm leading-snug">{p.conditionName}</p>
+                                            <p className="text-xs text-muted-foreground mt-0.5">Condition</p>
+                                        </div>
+                                        <StatusBadge status={p.conditionStatus} />
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <Badge variant="outline" className="text-xs font-semibold px-2.5 py-0.5 bg-muted">
+                                            Follow-up: {p.followUpStatus || "N/A"}
+                                        </Badge>
+                                        {p.percentageRecovery !== null && p.percentageRecovery !== undefined && (
+                                            <Badge className="text-xs font-bold bg-emerald-500/15 text-emerald-700 border-emerald-500/30 hover:bg-emerald-500/15">
+                                                Recovery: {p.percentageRecovery}%
+                                            </Badge>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {p.description && (
+                                    <div className="bg-muted/30 p-3 rounded-lg border text-sm text-muted-foreground italic">
+                                        &ldquo;{p.description}&rdquo;
+                                    </div>
+                                )}
+
+                                {p.questions && p.questions.length > 0 ? (
+                                    <div className="space-y-2">
+                                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Check-in Responses</p>
+                                        <div className="grid gap-2 sm:grid-cols-2">
+                                            {p.questions.map((q: any, qIdx: number) => {
+                                                const answerObj = Array.isArray(p.answer)
+                                                    ? p.answer.find((a: any) => a.question === q.question)
+                                                    : null
+                                                const answerVal = answerObj ? answerObj.answer : undefined
+                                                return (
+                                                    <div key={qIdx} className="text-xs flex flex-col gap-1 bg-muted/20 p-3 rounded-xl border border-dashed">
+                                                        <span className="font-medium text-muted-foreground">Question: {q.question}</span>
+                                                        <div className="flex items-center gap-1.5 mt-0.5">
+                                                            <span className="font-semibold">Response:</span>
+                                                            {q.isText ? (
+                                                                <span className="text-foreground">{answerVal || "—"}</span>
+                                                            ) : (
+                                                                <Badge variant="secondary" className="text-[10px] py-0 px-1 bg-primary/10 text-primary border-primary/20">
+                                                                    {answerVal || "—"}
+                                                                </Badge>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                )
+                                            })}
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <p className="text-xs text-muted-foreground italic pl-1">No checklist questions answered for this check-in.</p>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
+        </div>
     )
 }
 
@@ -1376,88 +1557,7 @@ export default function PatientsPage() {
                                         <p className="text-sm text-muted-foreground">No progress entries recorded yet</p>
                                     </div>
                                 ) : (
-                                    <div className="grid gap-6">
-                                        {conditions.map((c: any) => {
-                                            const progress = c.patientProgress || []
-                                            if (progress.length === 0) return null
-                                            return (
-                                                <div key={c.id} className="space-y-3">
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                                                            Condition: {c.disease?.name || `Disease #${c.diseaseId}`}
-                                                        </span>
-                                                        <StatusBadge status={c.status} />
-                                                    </div>
-                                                    <div className="grid gap-4">
-                                                        {progress.map((p: any) => (
-                                                            <div key={p.id} className="rounded-xl border bg-card p-4 shadow-sm hover:shadow-md transition-shadow space-y-4">
-                                                                <div className="flex items-center justify-between flex-wrap gap-2">
-                                                                    <div className="flex items-center gap-2.5">
-                                                                        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary shrink-0">
-                                                                            <CalendarIcon2 className="h-5 w-5" />
-                                                                        </div>
-                                                                        <div>
-                                                                            <p className="font-semibold text-sm leading-snug">
-                                                                                {format(new Date(p.scheduledDate), "MMMM dd, yyyy")}
-                                                                            </p>
-                                                                            <p className="text-xs text-muted-foreground mt-0.5">Scheduled Date</p>
-                                                                        </div>
-                                                                    </div>
-                                                                    <div className="flex items-center gap-2">
-                                                                        <Badge variant="outline" className="text-xs font-semibold px-2.5 py-0.5 bg-muted">
-                                                                            Follow-up: {p.followUpStatus || "N/A"}
-                                                                        </Badge>
-                                                                        {p.percentageRecovery !== null && p.percentageRecovery !== undefined && (
-                                                                            <Badge className="text-xs font-bold bg-emerald-500/15 text-emerald-700 border-emerald-500/30 hover:bg-emerald-500/15">
-                                                                                Recovery: {p.percentageRecovery}%
-                                                                            </Badge>
-                                                                        )}
-                                                                    </div>
-                                                                </div>
-
-                                                                {p.description && (
-                                                                    <div className="bg-muted/30 p-3 rounded-lg border text-sm text-muted-foreground italic">
-                                                                        &ldquo;{p.description}&rdquo;
-                                                                    </div>
-                                                                )}
-
-                                                                {p.questions && p.questions.length > 0 ? (
-                                                                    <div className="space-y-2">
-                                                                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Check-in Responses</p>
-                                                                        <div className="grid gap-2 sm:grid-cols-2">
-                                                                            {p.questions.map((q: any, qIdx: number) => {
-                                                                                const answerObj = Array.isArray(p.answer)
-                                                                                    ? p.answer.find((a: any) => a.question === q.question)
-                                                                                    : null
-                                                                                const answerVal = answerObj ? answerObj.answer : undefined
-                                                                                return (
-                                                                                    <div key={qIdx} className="text-xs flex flex-col gap-1 bg-muted/20 p-3 rounded-xl border border-dashed">
-                                                                                        <span className="font-medium text-muted-foreground">Question: {q.question}</span>
-                                                                                        <div className="flex items-center gap-1.5 mt-0.5">
-                                                                                            <span className="font-semibold">Response:</span>
-                                                                                            {q.isText ? (
-                                                                                                <span className="text-foreground">{answerVal || "—"}</span>
-                                                                                            ) : (
-                                                                                                <Badge variant="secondary" className="text-[10px] py-0 px-1 bg-primary/10 text-primary border-primary/20">
-                                                                                                    {answerVal || "—"}
-                                                                                                </Badge>
-                                                                                            )}
-                                                                                        </div>
-                                                                                    </div>
-                                                                                )
-                                                                            })}
-                                                                        </div>
-                                                                    </div>
-                                                                ) : (
-                                                                    <p className="text-xs text-muted-foreground italic pl-1">No checklist questions answered for this check-in.</p>
-                                                                )}
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                            )
-                                        })}
-                                    </div>
+                                    <ProgressCalendar conditions={conditions} />
                                 )}
                             </TabsContent>
 

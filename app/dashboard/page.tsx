@@ -10,6 +10,8 @@ import { Badge } from "@/components/ui/badge"
 import { IconTrendingUp } from "@tabler/icons-react"
 import { useQuery } from "@tanstack/react-query"
 import { getDashboardSummary, getDashboardCharts } from "@/lib/api"
+import { HospitalOverviewCard } from "@/components/hospital-overview-card"
+import { CriticalPatientsCard } from "@/components/critical-patients-card"
 import { cn } from "@/lib/utils"
 import {
   ResponsiveContainer,
@@ -240,6 +242,12 @@ export default function DashboardPage() {
                 <div className="text-muted-foreground">High risk patient cases</div>
               </CardFooter>
             </Card>
+          </div>
+
+          {/* AI Overview + Critical Patients */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6 items-start">
+            <HospitalOverviewCard />
+            <CriticalPatientsCard />
           </div>
 
           {/* Charts Section */}

@@ -25,6 +25,10 @@ import { loadRazorpayScript } from "@/lib/razorpay"
 
 const PRESET_AMOUNTS = [500, 1000, 2500, 5000]
 
+// Kept in sync with GST_RATE in MarkIAlivepost/src/features/hospital/hospital.service.ts.
+// Only used here for a live preview; the backend computes the authoritative amount.
+const GST_RATE = 0.18
+
 // Signals the user closed the Razorpay modal without paying — handled quietly
 // (no error toast) since it isn't a failure.
 const CANCELLED = "PAYMENT_CANCELLED"
@@ -144,6 +148,17 @@ export function AddBalanceCard() {
 
   const isPending = payMutation.isPending
 
+  // Live preview only — mirrors the backend's paise-rounded GST math so the
+  // number shown here matches what Razorpay will actually charge.
+  const enteredRupees = Number(amount)
+  const hasValidAmount = Number.isFinite(enteredRupees) && enteredRupees > 0
+  const baseAmountPaise = hasValidAmount ? Math.round(enteredRupees * 100) : 0
+  const gstAmountPaise = hasValidAmount ? Math.round(baseAmountPaise * GST_RATE) : 0
+  const totalAmountPaise = baseAmountPaise + gstAmountPaise
+
+  const formatPaise = (paise: number) =>
+    `₹${(paise / 100).toLocaleString("en-IN", { minimumFractionDigits: 2 })}`
+
   return (
     <Card className="w-full max-w-md">
       <CardHeader>
@@ -192,6 +207,27 @@ export function AddBalanceCard() {
               </Button>
             ))}
           </div>
+
+          {hasValidAmount && (
+            <div className="space-y-1 rounded-lg border bg-muted/40 p-3 text-sm">
+              <div className="flex justify-between text-muted-foreground">
+                <span>Amount</span>
+                <span>{formatPaise(baseAmountPaise)}</span>
+              </div>
+              <div className="flex justify-between text-muted-foreground">
+                <span>GST (18%)</span>
+                <span>{formatPaise(gstAmountPaise)}</span>
+              </div>
+              <div className="flex justify-between font-medium border-t pt-1 mt-1">
+                <span>Total payable</span>
+                <span>{formatPaise(totalAmountPaise)}</span>
+              </div>
+              <p className="text-xs text-muted-foreground pt-1">
+                Your wallet will be credited {formatPaise(baseAmountPaise)} — GST is a tax, not
+                spendable balance.
+              </p>
+            </div>
+          )}
         </CardContent>
 
         <CardFooter className="flex flex-col gap-3 items-stretch">

@@ -12,7 +12,8 @@ import { PatientSummaryView } from "@/components/patient-summary-view"
 import {
     Phone, Search, ArrowLeft, User, Heart, Droplets, Calendar as CalendarIcon2,
     Activity, Pill, Plus, Clock, Stethoscope, Building2, FileText,
-    AlertCircle, CheckCircle2, Shield, Loader2, Check, X, ListChecks, Smartphone, Sparkles, Trash2
+    AlertCircle, CheckCircle2, Shield, Loader2, Check, X, ListChecks, Smartphone, Sparkles, Trash2,
+    Download, NotebookPen
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -62,8 +63,10 @@ import {
     getPatientSummary,
     hospitalDeletePatient,
     getHospitalMe,
+    updateConditionRecommendation,
     type PatientSummary,
 } from "@/lib/api"
+import { downloadPatientInvoice } from "@/lib/invoice"
 
 // ─── Zod Schemas ─────────────────────────────────────────────────
 
@@ -91,6 +94,11 @@ const medicineAssignSchema = z.object({
     quantity: z.string().min(1, "Enter quantity"),
     tillDate: z.date({ required_error: "Till date is required" }),
     timings: z.array(z.string().regex(/^(\d|[01]\d|2[0-3]):([0-5]\d)$/, "Invalid time (HH:mm)")).min(1, "Select at least one timing"),
+})
+
+const recommendationSchema = z.object({
+    doctorRecommendation: z.string().max(2000, "Too long (max 2000 characters)").optional(),
+    invoiceRecommendation: z.string().max(2000, "Too long (max 2000 characters)").optional(),
 })
 
 // ─── Helpers ─────────────────────────────────────────────────────
@@ -346,6 +354,8 @@ export default function PatientsPage() {
     const [summaryData, setSummaryData] = useState<PatientSummary | null>(null)
     const [selectedConditionId, setSelectedConditionId] = useState<number | null>(null)
     const [removeDialogOpen, setRemoveDialogOpen] = useState(false)
+    const [recommendationDialogOpen, setRecommendationDialogOpen] = useState(false)
+    const [recommendationConditionId, setRecommendationConditionId] = useState<number | null>(null)
 
     const [page, setPage] = useState(1)
     const [limit, setLimit] = useState(10)
@@ -560,6 +570,53 @@ export default function PatientsPage() {
             toast.error("Failed to assign medicine", { description: error.message })
         },
     })
+
+    // ── Recommendation / Invoice-notes Form ──────────────────
+    const recommendationForm = useForm<z.infer<typeof recommendationSchema>>({
+        resolver: zodResolver(recommendationSchema),
+        defaultValues: { doctorRecommendation: "", invoiceRecommendation: "" },
+    })
+
+    // Open the notes dialog for a condition, pre-filled with its saved notes.
+    function openRecommendationDialog(condition: any) {
+        setRecommendationConditionId(condition.id)
+        recommendationForm.reset({
+            doctorRecommendation: condition.DoctorReccommendation ?? "",
+            invoiceRecommendation: condition.invoiceRecommendation ?? "",
+        })
+        setRecommendationDialogOpen(true)
+    }
+
+    const recommendationMutation = useMutation({
+        mutationFn: (values: z.infer<typeof recommendationSchema>) =>
+            updateConditionRecommendation({
+                conditionId: recommendationConditionId!,
+                doctorRecommendation: values.doctorRecommendation ?? "",
+                invoiceRecommendation: values.invoiceRecommendation ?? "",
+            }),
+        onSuccess: () => {
+            toast.success("Invoice notes saved")
+            setRecommendationDialogOpen(false)
+            setRecommendationConditionId(null)
+            queryClient.invalidateQueries({ queryKey: ["patient-search-mobile", mobileNumber] })
+        },
+        onError: (error: Error) => {
+            toast.error("Failed to save notes", { description: error.message })
+        },
+    })
+
+    // ── Download Invoice ─────────────────────────────────────
+    // Builds a print-ready invoice from the already-loaded patient data and the
+    // hospital's own profile (letterhead), then opens the print/Save-as-PDF flow.
+    function handleDownloadInvoice() {
+        if (!patient) return
+        const opened = downloadPatientInvoice(patient, hospitalMeQuery.data?.data)
+        if (!opened) {
+            toast.error("Couldn't open the invoice", {
+                description: "Allow pop-ups for this site, then try again.",
+            })
+        }
+    }
 
     // ── Summary Mutation ─────────────────────────────────────
     const summaryMutation = useMutation({
@@ -930,6 +987,15 @@ export default function PatientsPage() {
                                                 Generate Summary
                                             </Button>
                                         </motion.div>
+
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
+                                            className="gap-2 w-fit"
+                                            onClick={handleDownloadInvoice}
+                                        >
+                                            <Download className="h-4 w-4" /> Download Invoice
+                                        </Button>
 
                                         <AlertDialog open={removeDialogOpen} onOpenChange={setRemoveDialogOpen}>
                                             <Button
@@ -1372,6 +1438,53 @@ export default function PatientsPage() {
                                     </DialogContent>
                                 </Dialog>
 
+                                {/* Instructions / Invoice-notes Dialog */}
+                                <Dialog
+                                    open={recommendationDialogOpen}
+                                    onOpenChange={(open) => {
+                                        setRecommendationDialogOpen(open)
+                                        if (!open) setRecommendationConditionId(null)
+                                    }}
+                                >
+                                    <DialogContent className="sm:max-w-lg">
+                                        <DialogHeader>
+                                            <DialogTitle>Patient Instructions</DialogTitle>
+                                            <DialogDescription>
+                                                These notes appear on the patient&apos;s downloadable invoice.
+                                            </DialogDescription>
+                                        </DialogHeader>
+                                        <Form {...recommendationForm}>
+                                            <form onSubmit={recommendationForm.handleSubmit((v) => recommendationMutation.mutate(v))} className="space-y-4">
+                                                <FormField control={recommendationForm.control} name="doctorRecommendation" render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel>Doctor&apos;s Recommendation</FormLabel>
+                                                        <FormControl>
+                                                            <Textarea rows={4} placeholder="e.g. Complete the full antibiotic course. Rest for 5 days." {...field} />
+                                                        </FormControl>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )} />
+                                                <FormField control={recommendationForm.control} name="invoiceRecommendation" render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel>Invoice Instructions</FormLabel>
+                                                        <FormControl>
+                                                            <Textarea rows={4} placeholder="e.g. Follow up after 1 week. Avoid strenuous activity." {...field} />
+                                                        </FormControl>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )} />
+                                                <DialogFooter>
+                                                    <Button type="submit" className="w-full" disabled={recommendationMutation.isPending}>
+                                                        {recommendationMutation.isPending ? (
+                                                            <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...</>
+                                                        ) : "Save Notes"}
+                                                    </Button>
+                                                </DialogFooter>
+                                            </form>
+                                        </Form>
+                                    </DialogContent>
+                                </Dialog>
+
                                 {conditions.length === 0 ? (
                                     <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed py-12">
                                         <Activity className="h-10 w-10 text-muted-foreground/50 mb-3" />
@@ -1429,8 +1542,33 @@ export default function PatientsPage() {
                                                         >
                                                             <Pill className="h-4 w-4" /> Assign Medicine
                                                         </Button>
+                                                        <Button
+                                                            size="sm"
+                                                            variant="outline"
+                                                            className="gap-1.5 shrink-0"
+                                                            onClick={() => openRecommendationDialog(c)}
+                                                        >
+                                                            <NotebookPen className="h-4 w-4" />
+                                                            {c.DoctorReccommendation || c.invoiceRecommendation ? "Edit Instructions" : "Add Instructions"}
+                                                        </Button>
                                                     </div>
                                                 </div>
+                                                {(c.DoctorReccommendation || c.invoiceRecommendation) && (
+                                                    <div className="border-t bg-muted/20 px-4 py-3 space-y-2">
+                                                        {c.DoctorReccommendation && (
+                                                            <div className="text-sm">
+                                                                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Doctor&apos;s Recommendation</span>
+                                                                <p className="text-muted-foreground mt-0.5">{c.DoctorReccommendation}</p>
+                                                            </div>
+                                                        )}
+                                                        {c.invoiceRecommendation && (
+                                                            <div className="text-sm">
+                                                                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Invoice Instructions</span>
+                                                                <p className="text-muted-foreground mt-0.5">{c.invoiceRecommendation}</p>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                )}
                                             </motion.div>
                                         ))}
                                     </div>

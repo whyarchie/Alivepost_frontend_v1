@@ -110,10 +110,21 @@ export interface RazorpayPrefill {
   contact: string;
 }
 
+// GST breakdown for a wallet top-up. All amounts are in paise, matching
+// RazorpayOrder. `baseAmount` is what actually lands in the hospital's wallet
+// balance once payment is verified — `gstAmount` is tax, not spendable credit.
+export interface RazorpayGstBreakdown {
+  baseAmount: number;
+  gstAmount: number;
+  gstRate: number;
+  totalAmount: number;
+}
+
 export interface CreateHospitalOrderResponse {
   success: boolean;
   data: {
     order: RazorpayOrder;
+    gst: RazorpayGstBreakdown;
     prefill: RazorpayPrefill;
   };
 }
@@ -295,6 +306,28 @@ export async function getPatientCondition(id: number) {
   return apiFetch(`/patient/condition/?id=${id}`);
 }
 
+// ─── Condition Invoice / Recommendation Notes ──────────────────
+// Fills the doctor's recommendation and/or the invoice instructions on one of
+// the hospital's conditions. Only the fields provided are changed. These notes
+// are printed on the patient's downloadable invoice.
+export interface UpdateConditionRecommendationData {
+  conditionId: number;
+  doctorRecommendation?: string;
+  invoiceRecommendation?: string;
+}
+
+export async function updateConditionRecommendation(
+  data: UpdateConditionRecommendationData
+): Promise<{
+  success: boolean;
+  data: { id: number; DoctorReccommendation: string | null; invoiceRecommendation: string | null };
+}> {
+  return apiFetch("/hospital/condition/recommendation", {
+    method: "PATCH",
+    body: JSON.stringify(data),
+  });
+}
+
 // ─── Medicine Assignment ───────────────────────────────────────
 export interface AssignMedicineData {
   patientConditionId: number;
@@ -459,6 +492,41 @@ export interface DashboardChartsResponse {
 
 export async function getDashboardCharts(): Promise<DashboardChartsResponse> {
   return apiFetch("/dashboard/charts");
+}
+
+// ─── AI Patient-Population Overview ─────────────────────────────
+export type PopulationStatus =
+  | "CRITICAL"
+  | "NEEDS_ATTENTION"
+  | "STABLE"
+  | "HEALTHY"
+  | "UNKNOWN";
+
+export interface HospitalOverviewAction {
+  priority: "URGENT" | "IMPORTANT" | "ROUTINE";
+  action: string;
+}
+
+export interface HospitalOverview {
+  status: PopulationStatus;
+  headline: string;
+  keyInsights: string[];
+  concerns: string[];
+  recommendedActions: HospitalOverviewAction[];
+  summaryMarkdown: string;
+  stats: {
+    totalPatients: number;
+    activePatients: number;
+    criticalAlerts: number;
+    highRiskPatients: number;
+  };
+}
+
+// AI-generated operational summary of the hospital's whole patient population.
+// Backend route: GET /dashboard/ai-overview — requires a hospital token. Slow
+// (calls the LLM), so callers should cache the result.
+export async function getHospitalAiOverview(): Promise<{ success: boolean; data: HospitalOverview }> {
+  return apiFetch("/dashboard/ai-overview");
 }
 
 

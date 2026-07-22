@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { motion, AnimatePresence } from "framer-motion"
-import { format } from "date-fns"
+import { format, addDays } from "date-fns"
 import {
     Phone, Search, ArrowLeft, Plus, Trash2, Loader2, Save, Send, AlertCircle
 } from "lucide-react"
@@ -334,23 +334,47 @@ function CreateProgressContent() {
                                 <CardHeader>
                                     <CardTitle className="text-base flex items-center gap-2">
                                         <div className="h-6 w-6 rounded-full bg-primary/20 flex items-center justify-center text-primary text-xs font-bold">2</div>
-                                        Tracking Parameters
+                                        Check-in Schedule
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent>
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="space-y-2 col-span-2">
-                                            <Label>Start Date</Label>
+                                            <Label>First check-in date</Label>
                                             <Input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} />
                                         </div>
                                         <div className="space-y-2">
-                                            <Label>Frequency (Days gap)</Label>
-                                            <Input type="number" min="1" value={frequency} onChange={e => setFrequency(e.target.value)} />
+                                            <Label>Check in every</Label>
+                                            <div className="relative">
+                                                <Input type="number" min="1" value={frequency} onChange={e => setFrequency(e.target.value)} className="pr-14" />
+                                                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">days</span>
+                                            </div>
                                         </div>
                                         <div className="space-y-2">
-                                            <Label>Total Occurrences</Label>
+                                            <Label>Number of check-ins</Label>
                                             <Input type="number" min="1" value={occurrences} onChange={e => setOccurrences(e.target.value)} />
                                         </div>
+                                        {(() => {
+                                            // Plain-English recap so staff can see the exact schedule
+                                            // they're building instead of decoding "frequency/occurrences".
+                                            const freq = parseInt(frequency)
+                                            const occ = parseInt(occurrences)
+                                            if (!startDate || !Number.isFinite(freq) || freq <= 0 || !Number.isFinite(occ) || occ <= 0) {
+                                                return null
+                                            }
+                                            const start = new Date(startDate)
+                                            if (isNaN(start.getTime())) return null
+                                            const last = addDays(start, freq * (occ - 1))
+                                            const countPhrase = `${occ} check-in${occ > 1 ? "s" : ""}`
+                                            const everyPhrase = freq === 1 ? "one per day" : `one every ${freq} days`
+                                            return (
+                                                <p className="col-span-2 rounded-lg bg-primary/5 border border-primary/10 px-3 py-2 text-sm text-muted-foreground">
+                                                    <span className="font-medium text-foreground">{countPhrase}</span>
+                                                    {" — "}{everyPhrase} — starting {format(start, "d MMM yyyy")}
+                                                    {occ > 1 ? `, last on ${format(last, "d MMM yyyy")}` : ""}.
+                                                </p>
+                                            )
+                                        })()}
                                     </div>
                                 </CardContent>
                             </Card>

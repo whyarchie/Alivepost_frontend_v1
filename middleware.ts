@@ -10,14 +10,6 @@ const JWT_SECRET = process.env.JWT_SECRET
  * `jsonwebtoken`. Fails closed: any error or a missing secret -> not authed.
  */
 async function isValidHospital(token: string): Promise<boolean> {
-    if (!JWT_SECRET) {
-        console.error(
-            "[frontend middleware] JWT_SECRET is not set — refusing access. " +
-                "Set it in .env to match the backend."
-        )
-        return false
-    }
-
     try {
         const { payload } = await jwtVerify(
             token,
@@ -34,15 +26,27 @@ async function isValidHospital(token: string): Promise<boolean> {
 export async function middleware(request: NextRequest) {
     const { pathname } = request.nextUrl
     const token = request.cookies.get("token")?.value
-    const isAuthed = token ? await isValidHospital(token) : false
+
+    // A missing secret is a deployment misconfiguration, not an auth failure.
+    // Refuse access, but never delete the user's cookie in this state — doing
+    // so masks the real problem as "the token was never set".
+    const secretMissing = !JWT_SECRET
+    if (secretMissing) {
+        console.error(
+            "[frontend middleware] JWT_SECRET is not set — refusing access. " +
+                "Set it in the deployment environment (e.g. Vercel project env vars) " +
+                "to match the backend."
+        )
+    }
+    const isAuthed = token && !secretMissing ? await isValidHospital(token) : false
 
     // Protect the dashboard: only verified hospitals get through.
     if (pathname.startsWith("/dashboard") && !isAuthed) {
         const loginUrl = new URL("/login", request.url)
         loginUrl.searchParams.set("redirect", pathname)
         const response = NextResponse.redirect(loginUrl)
-        // Clear the invalid/forged cookie if it exists
-        if (token) {
+        // Clear the invalid/forged cookie only when verification actually ran and failed
+        if (token && !secretMissing) {
             response.cookies.delete("token")
         }
         return response
@@ -58,7 +62,7 @@ export async function middleware(request: NextRequest) {
         if (isAuthed) {
             return NextResponse.redirect(new URL("/dashboard", request.url))
         }
-        if (token) {
+        if (token && !secretMissing) {
             // Token present but failed verification — clear it for a clean login.
             const response = NextResponse.next()
             response.cookies.delete("token")

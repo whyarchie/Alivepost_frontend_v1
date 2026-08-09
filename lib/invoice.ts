@@ -135,11 +135,11 @@ export function buildInvoiceHtml(patient: any, hospital?: InvoiceHospital): stri
         </table>
 
         ${doctorNote
-          ? `<div class="note"><span class="note-label">Doctor's Recommendation</span><p>${esc(doctorNote)}</p></div>`
+          ? `<div class="note"><span class="note-label">Do's</span><p>${esc(doctorNote)}</p></div>`
           : ""
         }
         ${invoiceNote
-          ? `<div class="note"><span class="note-label">Invoice Instructions</span><p>${esc(invoiceNote)}</p></div>`
+          ? `<div class="note"><span class="note-label">Don'ts</span><p>${esc(invoiceNote)}</p></div>`
           : ""
         }
       </section>`;

@@ -1483,7 +1483,7 @@ export default function PatientsPage() {
                       <form onSubmit={recommendationForm.handleSubmit((v) => recommendationMutation.mutate(v))} className="space-y-4">
                         <FormField control={recommendationForm.control} name="doctorRecommendation" render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Doctor&apos;s Recommendation</FormLabel>
+                            <FormLabel>Do&apos;s</FormLabel>
                             <FormControl>
                               <Textarea rows={4} placeholder="e.g. Complete the full antibiotic course. Rest for 5 days." {...field} />
                             </FormControl>
@@ -1492,7 +1492,7 @@ export default function PatientsPage() {
                         )} />
                         <FormField control={recommendationForm.control} name="invoiceRecommendation" render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Invoice Instructions</FormLabel>
+                            <FormLabel>Don&apos;ts</FormLabel>
                             <FormControl>
                               <Textarea rows={4} placeholder="e.g. Follow up after 1 week. Avoid strenuous activity." {...field} />
                             </FormControl>
@@ -1589,13 +1589,13 @@ export default function PatientsPage() {
                           <div className="border-t bg-muted/20 px-4 py-3 space-y-2">
                             {c.DoctorReccommendation && (
                               <div className="text-sm">
-                                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Doctor&apos;s Recommendation</span>
+                                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Do&apos;s</span>
                                 <p className="text-muted-foreground mt-0.5">{c.DoctorReccommendation}</p>
                               </div>
                             )}
                             {c.invoiceRecommendation && (
                               <div className="text-sm">
-                                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Invoice Instructions</span>
+                                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Don&apos;ts</span>
                                 <p className="text-muted-foreground mt-0.5">{c.invoiceRecommendation}</p>
                               </div>
                             )}

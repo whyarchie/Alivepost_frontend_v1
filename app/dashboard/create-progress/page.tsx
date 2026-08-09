@@ -62,6 +62,29 @@ function CreateProgressContent() {
     const [frequency, setFrequency] = useState<string>("1")
     const [occurrences, setOccurrences] = useState<string>("5")
 
+    // Derived end-date (startDate + freq*(occ-1) days). Stored as a controlled string
+    // so the user can also pick an end date and we back-calculate occurrences.
+    const computedEndDate = (() => {
+        const freq = parseInt(frequency)
+        const occ = parseInt(occurrences)
+        if (!startDate || !Number.isFinite(freq) || freq <= 0 || !Number.isFinite(occ) || occ <= 0) return ""
+        const start = new Date(startDate)
+        if (isNaN(start.getTime())) return ""
+        return format(addDays(start, freq * (occ - 1)), "yyyy-MM-dd")
+    })()
+
+    const handleEndDateChange = (val: string) => {
+        if (!val || !startDate) return
+        const start = new Date(startDate)
+        const end = new Date(val)
+        const freq = parseInt(frequency)
+        if (isNaN(start.getTime()) || isNaN(end.getTime()) || !Number.isFinite(freq) || freq <= 0) return
+        const diffDays = Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24))
+        if (diffDays < 0) return
+        const newOcc = Math.floor(diffDays / freq) + 1
+        setOccurrences(String(Math.max(1, newOcc)))
+    }
+
     // Questions builder state
     const [questions, setQuestions] = useState<Question[]>([])
 
@@ -339,20 +362,25 @@ function CreateProgressContent() {
                                 </CardHeader>
                                 <CardContent>
                                     <div className="grid grid-cols-2 gap-4">
-                                        <div className="space-y-2 col-span-2">
-                                            <Label>First check-in date</Label>
+                                        <div className="space-y-2">
+                                            <Label>Start Date</Label>
                                             <Input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} />
                                         </div>
                                         <div className="space-y-2">
-                                            <Label>Check in every</Label>
+                                            <Label>End Date</Label>
+                                            <Input
+                                                type="date"
+                                                value={computedEndDate}
+                                                min={startDate}
+                                                onChange={e => handleEndDateChange(e.target.value)}
+                                            />
+                                        </div>
+                                        <div className="space-y-2 col-span-2">
+                                            <Label>Repeat Every</Label>
                                             <div className="relative">
                                                 <Input type="number" min="1" value={frequency} onChange={e => setFrequency(e.target.value)} className="pr-14" />
                                                 <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">days</span>
                                             </div>
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label>Number of check-ins</Label>
-                                            <Input type="number" min="1" value={occurrences} onChange={e => setOccurrences(e.target.value)} />
                                         </div>
                                         {(() => {
                                             // Plain-English recap so staff can see the exact schedule

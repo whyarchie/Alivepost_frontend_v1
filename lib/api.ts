@@ -274,7 +274,8 @@ export interface CreateConditionData {
   patientId: number;
   diseaseId: number;
   hospitalId: number;
-  doctorId?: number;
+  hospitalPatientId: string;
+  doctorId: number;
   status: "STABLE" | "CRITICAL" | "RECOVERED";
   startDate: string;
   endDate?: string;
@@ -295,10 +296,13 @@ export interface ConditionBilling {
 // Fails with 402 (surfaced as an Error) when the balance is insufficient.
 export async function createPatientCondition(
   data: CreateConditionData
-): Promise<{ success: boolean; data: { id: number; billing?: ConditionBilling } & Record<string, any> }> {
+): Promise<{ success: boolean; data: { id: number; HospitalPatientId: string | null; billing?: ConditionBilling } & Record<string, any> }> {
+  // Keep the backend typo isolated at the API boundary.
+  const { hospitalPatientId, ...conditionData } = data;
+
   return apiFetch("/patient/condition", {
     method: "POST",
-    body: JSON.stringify(data),
+    body: JSON.stringify({ ...conditionData, hostpitalPatientId: hospitalPatientId }),
   });
 }
 

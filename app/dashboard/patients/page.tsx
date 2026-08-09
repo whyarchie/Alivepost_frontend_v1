@@ -82,6 +82,7 @@ const medicalHistorySchema = z.object({
 })
 
 const conditionSchema = z.object({
+    hospitalPatientId: z.string().trim().min(1, "Hospital patient ID is required"),
     diseaseId: z.string().min(1, "Select a disease"),
     status: z.enum(["STABLE", "CRITICAL", "RECOVERED"]),
     startDate: z.date({ required_error: "Start date is required" }),
@@ -505,7 +506,19 @@ export default function PatientsPage() {
     // ── Condition Form ───────────────────────────────────────
     const conditionForm = useForm<z.infer<typeof conditionSchema>>({
         resolver: zodResolver(conditionSchema),
+        defaultValues: { hospitalPatientId: "" },
     })
+
+    function handleConditionDialogOpenChange(open: boolean) {
+        setConditionDialogOpen(open)
+        if (!open) {
+            conditionForm.reset()
+            setDiseaseSearch("")
+            setDoctorSearch("")
+            setDiseaseOpen(false)
+            setDoctorOpen(false)
+        }
+    }
 
     const conditionMutation = useMutation({
         mutationFn: (values: z.infer<typeof conditionSchema>) =>
@@ -513,6 +526,7 @@ export default function PatientsPage() {
                 patientId: patient?.id,
                 diseaseId: parseInt(values.diseaseId),
                 hospitalId: 1, // Must be positive for Zod schema; backend overrides with user.id
+                hospitalPatientId: values.hospitalPatientId,
                 doctorId: parseInt(values.doctorId),
                 status: values.status,
                 startDate: values.startDate.toISOString(),
@@ -525,8 +539,7 @@ export default function PatientsPage() {
                     ? `Charged ₹${(billing.charged / 100).toLocaleString("en-IN")} now (50% of ₹${(billing.totalCost / 100).toLocaleString("en-IN")} for ${billing.days} day(s)). Wallet balance: ₹${(billing.balance / 100).toLocaleString("en-IN")}`
                     : undefined,
             })
-            conditionForm.reset()
-            setConditionDialogOpen(false)
+            handleConditionDialogOpenChange(false)
             queryClient.invalidateQueries({ queryKey: ["patient-search-mobile", mobileNumber] })
             // Enrollment deducted from the wallet — refresh the cached balance.
             queryClient.invalidateQueries({ queryKey: ["hospital-me"] })
@@ -1110,7 +1123,7 @@ export default function PatientsPage() {
                                         <h3 className="text-lg font-semibold">Patient Conditions</h3>
                                         <p className="text-sm text-muted-foreground">Active diseases and treatment details</p>
                                     </div>
-                                    <Dialog open={conditionDialogOpen} onOpenChange={setConditionDialogOpen}>
+                                    <Dialog open={conditionDialogOpen} onOpenChange={handleConditionDialogOpenChange}>
                                         <DialogTrigger asChild>
                                             <Button size="sm" className="gap-1.5">
                                                 <Plus className="h-4 w-4" /> Add Condition
@@ -1123,6 +1136,19 @@ export default function PatientsPage() {
                                             </DialogHeader>
                                             <Form {...conditionForm}>
                                                 <form onSubmit={conditionForm.handleSubmit((v) => conditionMutation.mutate(v))} className="space-y-4">
+                                                    <FormField
+                                                        control={conditionForm.control}
+                                                        name="hospitalPatientId"
+                                                        render={({ field }) => (
+                                                            <FormItem>
+                                                                <FormLabel>Hospital Patient ID <span className="text-destructive">*</span></FormLabel>
+                                                                <FormControl>
+                                                                    <Input placeholder="e.g. HOSP-12345" autoComplete="off" {...field} />
+                                                                </FormControl>
+                                                                <FormMessage />
+                                                            </FormItem>
+                                                        )}
+                                                    />
                                                     <FormField control={conditionForm.control} name="diseaseId" render={({ field }) => (
                                                         <FormItem className="relative">
                                                             <FormLabel>Disease</FormLabel>
@@ -1507,6 +1533,12 @@ export default function PatientsPage() {
                                                             <StatusBadge status={c.status} />
                                                         </div>
                                                         <div className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
+                                                            {c.HospitalPatientId && (
+                                                                <span className="flex items-center gap-1">
+                                                                    <FileText className="h-3.5 w-3.5" />
+                                                                    Hospital Patient ID: {c.HospitalPatientId}
+                                                                </span>
+                                                            )}
                                                             {c.hospital && (
                                                                 <span className="flex items-center gap-1"><Building2 className="h-3.5 w-3.5" /> {c.hospital.name}</span>
                                                             )}

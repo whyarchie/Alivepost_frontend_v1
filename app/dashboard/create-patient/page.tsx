@@ -206,7 +206,6 @@ export default function CreatePatient() {
                                                 <SelectItem value="PASSPORT">Passport</SelectItem>
                                                 <SelectItem value="DRIVING_LICENSE">Driving License</SelectItem>
                                                 <SelectItem value="ABHA_ID">ABHA ID</SelectItem>
-                                                <SelectItem value="PATIENT_ID">Patient ID</SelectItem>
                                             </SelectContent>
                                         </Select>
                                         <FormMessage />

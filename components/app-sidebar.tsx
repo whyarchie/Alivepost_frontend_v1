@@ -36,7 +36,7 @@ const navMain = [
 
 const navSecondary = [
   { title: "Settings", url: "#", icon: IconSettings },
-  { title: "Get Help", url: "#", icon: IconHelp },
+  { title: "Get Help", url: "https://docs.google.com/document/d/e/2PACX-1vThgELo4Z5QM6SWYp9eIL3ApjvnDGR6XQegSt_J4tnmvBcIYqo8Z94hmcgnQ0FmHQ/pub", icon: IconHelp },
   { title: "Search", url: "#", icon: IconSearch },
 ]
 

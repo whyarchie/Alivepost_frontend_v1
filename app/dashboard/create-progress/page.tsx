@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, Suspense } from "react"
-import { useSearchParams } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { motion, AnimatePresence } from "framer-motion"
 import { format, addDays } from "date-fns"
@@ -46,6 +46,7 @@ export default function CreateProgressPage() {
 }
 
 function CreateProgressContent() {
+    const router = useRouter()
     const searchParams = useSearchParams()
     const initialMobile = searchParams.get("mobile") || ""
     const initialConditionId = searchParams.get("conditionId") || ""
@@ -124,17 +125,9 @@ function CreateProgressContent() {
         },
         onSuccess: () => {
             toast.success("Progress tracking scheduled successfully")
-            // Reset form optionally or take user back
-            setActiveMobileSearch(null)
-            setMobileNumber("")
-            setSelectedConditionId("")
-            setQuestions([
-                {
-                    id: crypto.randomUUID(),
-                    isText: true,
-                    question: "How are you feeling today?",
-                }
-            ])
+            const patientMobile = patientQuery.data?.data?.mobileNumber || activeMobileSearch || mobileNumber
+            queryClient.invalidateQueries({ queryKey: ["patient-search-mobile", patientMobile] })
+            router.push(`/dashboard/patients?mobile=${encodeURIComponent(patientMobile)}`)
         },
         onError: (error: Error) => {
             toast.error("Failed to setup progress tracking", { description: error.message })

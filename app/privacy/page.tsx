@@ -46,30 +46,105 @@ export default function PrivacyPolicyPage() {
 
                 <div className="grid gap-12 md:gap-16">
                     {/* Section 1 */}
-                    <section id="who-we-are" className="space-y-4">
+                    <section id="introduction" className="space-y-8">
                         <div className="flex items-center gap-3">
                             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
                                 <Shield className="h-5 w-5 text-primary" />
                             </div>
-                            <h2 className="text-2xl font-bold tracking-tight">1. WHO WE ARE</h2>
+                            <h2 className="text-2xl font-bold tracking-tight">1. INTRODUCTION</h2>
                         </div>
-                        <div className="prose prose-gray dark:prose-invert max-w-none text-muted-foreground leading-relaxed">
-                            <p>
-                                Alive Post ("we", "our", "us") operates the Alive Post mobile application. This policy explains what data we collect, why we collect it, and how we protect it.
-                            </p>
-                            <div className="mt-6 rounded-2xl border bg-muted/30 p-6 space-y-4">
-                                <div className="flex items-start gap-4">
-                                    <Mail className="h-5 w-5 text-primary mt-0.5" />
-                                    <div>
-                                        <div className="font-medium text-foreground">Contact</div>
-                                        <div className="text-sm">Abhishek@alivepost.com</div>
-                                    </div>
+                        
+                        <div className="space-y-8 text-muted-foreground leading-relaxed">
+                            <div className="space-y-3">
+                                <h3 className="text-xl font-semibold text-foreground">1.1 About AlivePost</h3>
+                                <p>
+                                    AlivePost is a digital post-discharge healthcare platform operated by Quillsstroke Private Limited ("AlivePost", "Company", "we", "our", or "us"). AlivePost helps hospitals and healthcare professionals continue patient care after hospital discharge by providing digital tools for medication management, recovery monitoring, appointment reminders, health education, communication, and patient engagement.
+                                </p>
+                                <p>
+                                    The AlivePost platform includes a patient mobile application, a hospital dashboard, an administrative portal, and related digital services that enable secure communication between patients and their treating healthcare providers.
+                                </p>
+                            </div>
+
+                            <div className="space-y-3">
+                                <h3 className="text-xl font-semibold text-foreground">1.2 Purpose of this Agreement</h3>
+                                <p>This User Agreement, Privacy Policy, and Patient Consent ("Agreement") explains:</p>
+                                <ul className="list-disc pl-6 space-y-1">
+                                    <li>The terms governing your use of AlivePost.</li>
+                                    <li>The personal and health information we collect.</li>
+                                    <li>How and why we collect, use, store, process, and share your information.</li>
+                                    <li>Your rights regarding your personal data.</li>
+                                    <li>The consent required for providing post-discharge healthcare services through AlivePost.</li>
+                                    <li>The responsibilities of AlivePost, participating hospitals, healthcare professionals, and users.</li>
+                                </ul>
+                            </div>
+
+                            <div className="space-y-3">
+                                <h3 className="text-xl font-semibold text-foreground">1.3 Scope</h3>
+                                <p>This Agreement applies to:</p>
+                                <ul className="list-disc pl-6 space-y-1">
+                                    <li>Patients using the AlivePost mobile application.</li>
+                                    <li>Family members or caregivers authorized by a patient.</li>
+                                    <li>Hospitals, clinics, and healthcare organizations using AlivePost.</li>
+                                    <li>Doctors, nurses, and other authorized healthcare professionals.</li>
+                                    <li>Visitors accessing AlivePost websites or digital services where applicable.</li>
+                                </ul>
+                            </div>
+
+                            <div className="space-y-3">
+                                <h3 className="text-xl font-semibold text-foreground">1.4 Acceptance of this Agreement</h3>
+                                <p>By creating an account, logging into AlivePost, accessing our services, or selecting "I Agree", you confirm that:</p>
+                                <ul className="list-disc pl-6 space-y-1">
+                                    <li>You have read and understood this Agreement.</li>
+                                    <li>You agree to be bound by the Terms and Conditions contained in this document.</li>
+                                    <li>You consent to the collection, use, storage, processing, and sharing of your personal and health information as described in this Agreement.</li>
+                                    <li>You authorize AlivePost to process your information for providing post-discharge healthcare services and related features.</li>
+                                    <li>You understand that you may withdraw your consent at any time in accordance with applicable law, although doing so may affect the availability of certain services.</li>
+                                </ul>
+                            </div>
+
+                            <div className="space-y-3">
+                                <h3 className="text-xl font-semibold text-foreground flex items-center gap-2">
+                                    <Shield className="h-5 w-5 text-destructive" />
+                                    1.5 Important Medical Notice
+                                </h3>
+                                <div className="rounded-2xl border border-destructive/20 bg-destructive/5 p-6 space-y-4">
+                                    <p className="text-foreground">
+                                        AlivePost is a technology platform designed to support continuity of care after hospital discharge. <strong>AlivePost is not a hospital, clinic, pharmacy, emergency medical service, or a substitute for professional medical advice, diagnosis, or treatment.</strong>
+                                    </p>
+                                    <p className="text-foreground">
+                                        Patients should always consult their treating doctor or healthcare provider for medical decisions. In the event of a medical emergency, immediately contact your treating doctor or the nearest emergency medical service. AI-generated insights, reminders, or recommendations available through AlivePost are intended to assist users and healthcare providers and must not be relied upon as the sole basis for medical decisions.
+                                    </p>
                                 </div>
-                                <div className="flex items-start gap-4">
-                                    <Smartphone className="h-5 w-5 text-primary mt-0.5" />
-                                    <div>
-                                        <div className="font-medium text-foreground">Address</div>
-                                        <div className="text-sm">H-53 Sector 63 Noida, 201301</div>
+                            </div>
+
+                            <div className="space-y-3">
+                                <h3 className="text-xl font-semibold text-foreground">1.6 Contact Information</h3>
+                                <div className="mt-4 rounded-2xl border bg-muted/30 p-6 space-y-4">
+                                    <div className="grid gap-4 sm:grid-cols-2">
+                                        <div>
+                                            <div className="text-sm text-muted-foreground font-medium">Company Name</div>
+                                            <div className="text-foreground">Quillsstroke Private Limited</div>
+                                        </div>
+                                        <div>
+                                            <div className="text-sm text-muted-foreground font-medium">Brand Name</div>
+                                            <div className="text-foreground">AlivePost</div>
+                                        </div>
+                                        <div>
+                                            <div className="text-sm text-muted-foreground font-medium">Email</div>
+                                            <div className="text-foreground">
+                                                <a href="mailto:Abhishek@alivepost.com" className="text-primary hover:underline transition-colors">Abhishek@alivepost.com</a>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <div className="text-sm text-muted-foreground font-medium">Website</div>
+                                            <div className="text-foreground">
+                                                <a href="https://alivepost.com" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline transition-colors">https://alivepost.com</a>
+                                            </div>
+                                        </div>
+                                        <div className="sm:col-span-2">
+                                            <div className="text-sm text-muted-foreground font-medium">Registered Office</div>
+                                            <div className="text-foreground">H-53, Sector 63, Noida, Uttar Pradesh - 201301, India</div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -190,7 +265,7 @@ export default function PrivacyPolicyPage() {
                             </div>
                         </div>
                         <div className="mt-4 p-4 rounded-xl border border-destructive/20 bg-destructive/5 text-destructive font-medium text-center text-sm">
-                            We do NOT store your data on third-party advertising platforms.
+                            We <strong>DO NOT</strong> store your data on third-party advertising platforms.
                         </div>
                     </section>
 
@@ -220,7 +295,7 @@ export default function PrivacyPolicyPage() {
                             <div className="rounded-2xl border border-destructive/20 bg-destructive/5 p-6">
                                 <h3 className="font-bold mb-3 text-destructive flex items-center gap-2">
                                     <div className="h-1.5 w-1.5 rounded-full bg-destructive" />
-                                    We do NOT share your data with:
+                                    We <strong>DO NOT</strong> share your data with:
                                 </h3>
                                 <div className="flex flex-wrap gap-4 text-sm font-bold text-destructive/80">
                                     <span className="inline-flex items-center gap-1">× Advertisers</span>

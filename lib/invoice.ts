@@ -261,9 +261,7 @@ export function buildInvoiceHtml(patient: any, hospital?: InvoiceHospital): stri
       <div class="brand">
         <h1>${esc(hosp.name || "Alivepost")}</h1>
         <div class="hosp-detail">
-          ${hosp.address ? esc(hosp.address) + "<br/>" : ""}
-          ${hosp.contactNumber ? "Tel: " + esc(hosp.contactNumber) + (hosp.email ? " · " : "") : ""}
-          ${hosp.email ? esc(hosp.email) : ""}
+          ${hosp.address ? esc(hosp.address) : ""}
         </div>
       </div>
       ${emergencyContact

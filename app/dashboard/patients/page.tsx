@@ -163,21 +163,97 @@ function DatePickerField({ field, label, placeholder }: { field: any; label: str
 // ─── Tracked Progress Calendar ───────────────────────────────────
 // A single check-in flattened out of its parent condition, so the calendar
 // (date) becomes the primary axis rather than the condition.
+interface ProgressQuestion {
+  question: string
+  isText?: boolean
+}
+
+interface ProgressAnswer {
+  question: string
+  answer?: unknown
+}
+
+interface ProgressEntry {
+  id: number | string
+  scheduledDate: string
+  followUpStatus?: string | null
+  percentageRecovery?: number | null
+  description?: string | null
+  questions?: ProgressQuestion[] | null
+  answer?: ProgressAnswer[] | null
+  jsonField?: unknown
+}
+
+interface ProgressCondition {
+  diseaseId?: number | string
+  disease?: { name?: string | null } | null
+  status?: string | null
+  patientProgress?: ProgressEntry[] | null
+}
+
 interface FlatProgress {
   id: number | string
   scheduledDate: string
   followUpStatus?: string | null
   percentageRecovery?: number | null
   description?: string | null
-  questions?: any[]
-  answer?: any
+  questions?: ProgressQuestion[] | null
+  answer?: ProgressAnswer[] | null
+  jsonField?: unknown
   conditionName: string
   conditionStatus: string
 }
 
+interface CallData {
+  summary: string | null
+  fields: Array<{ key: string; value: unknown }>
+}
+
+function formatCallDataValue(value: unknown): string {
+  if (value === undefined || value === "") return "—"
+  if (value === null) return "null"
+  if (typeof value === "string") return value
+  if (typeof value === "number" || typeof value === "boolean") return String(value)
+
+  try {
+    return JSON.stringify(value, null, 2) ?? String(value)
+  } catch {
+    return String(value)
+  }
+}
+
+function getCallData(value: unknown): CallData {
+  if (value === null || value === undefined) {
+    return { summary: null, fields: [] }
+  }
+
+  if (typeof value === "object" && !Array.isArray(value)) {
+    const entries = Object.entries(value as Record<string, unknown>)
+    const callSummary = entries.find(([key]) => key === "callSummary")?.[1]
+    const summaryText = callSummary === undefined || callSummary === null
+      ? ""
+      : formatCallDataValue(callSummary).trim()
+
+    return {
+      summary: summaryText || null,
+      fields: entries
+        .filter(([key]) => key !== "callSummary")
+        .map(([key, fieldValue]) => ({ key, value: fieldValue })),
+    }
+  }
+
+  if (Array.isArray(value) && value.length === 0) {
+    return { summary: null, fields: [] }
+  }
+
+  // Older records may contain a top-level array or primitive even though the
+  // current admin editor writes an object. Keep those records readable.
+  return { summary: null, fields: [{ key: "Data", value }] }
+}
+
 // Renders the patient's tracked progress as a month calendar: days that have
 // check-ins are dotted, and clicking a day lists that day's check-ins.
-function ProgressCalendar({ conditions }: { conditions: any[] }) {
+function ProgressCalendar({ conditions }: { conditions: ProgressCondition[] }) {
   // Flatten every check-in across all conditions, tagging each with the
   // condition it belongs to (we no longer group the UI by condition).
   const entries = useMemo<FlatProgress[]>(() => {
@@ -187,7 +263,7 @@ function ProgressCalendar({ conditions }: { conditions: any[] }) {
         list.push({
           ...p,
           conditionName: c.disease?.name || `Disease #${c.diseaseId}`,
-          conditionStatus: c.status,
+          conditionStatus: c.status || "STABLE",
         })
       }
     }
@@ -224,6 +300,13 @@ function ProgressCalendar({ conditions }: { conditions: any[] }) {
 
   const selectedKey = selectedDate ? format(selectedDate, "yyyy-MM-dd") : ""
   const selectedEntries = byDay.get(selectedKey) || []
+  const selectedCallEntries = selectedEntries.map((entry) => ({
+    entry,
+    callData: getCallData(entry.jsonField),
+  }))
+  const hasCallData = selectedCallEntries.some(
+    ({ callData }) => Boolean(callData.summary) || callData.fields.length > 0
+  )
 
   return (
     <div className="grid gap-6 lg:grid-cols-[auto_1fr] items-start">
@@ -249,94 +332,178 @@ function ProgressCalendar({ conditions }: { conditions: any[] }) {
         </div>
       </div>
 
-      {/* Check-ins for the selected day */}
-      <div className="space-y-3 min-w-0">
-        <div className="flex items-center gap-2 flex-wrap">
-          <CalendarIcon2 className="h-4 w-4 text-primary" />
-          <h4 className="font-semibold">
-            {selectedDate ? format(selectedDate, "EEEE, dd MMM yyyy") : "Select a date"}
-          </h4>
-          {selectedEntries.length > 0 && (
-            <Badge variant="secondary" className="text-xs">
-              {selectedEntries.length} check-in{selectedEntries.length > 1 ? "s" : ""}
-            </Badge>
-          )}
-        </div>
+      {/* The calendar is shared by both selected-day data views. */}
+      <Tabs defaultValue="patient-answer" className="min-w-0 w-full">
+        <TabsList className="h-auto w-full justify-start gap-1 bg-muted/60 p-1 sm:w-fit">
+          <TabsTrigger value="patient-answer">Patient Answer</TabsTrigger>
+          <TabsTrigger value="call-summary">Call Summary</TabsTrigger>
+        </TabsList>
 
-        {selectedEntries.length === 0 ? (
-          <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed py-12 text-center">
-            <ListChecks className="h-10 w-10 text-muted-foreground/40 mb-3" />
-            <p className="text-sm text-muted-foreground">No check-ins on this date</p>
-            <p className="text-xs text-muted-foreground/70 mt-1">Pick a dotted day to view its check-ins.</p>
+        <TabsContent value="patient-answer" className="mt-4 space-y-3">
+          <div className="flex items-center gap-2 flex-wrap">
+            <CalendarIcon2 className="h-4 w-4 text-primary" />
+            <h4 className="font-semibold">
+              {selectedDate ? format(selectedDate, "EEEE, dd MMM yyyy") : "Select a date"}
+            </h4>
+            {selectedEntries.length > 0 && (
+              <Badge variant="secondary" className="text-xs">
+                {selectedEntries.length} check-in{selectedEntries.length > 1 ? "s" : ""}
+              </Badge>
+            )}
           </div>
-        ) : (
-          <div className="grid gap-4">
-            {selectedEntries.map((p) => (
-              <div key={p.id} className="rounded-xl border bg-card p-4 shadow-sm hover:shadow-md transition-shadow space-y-4">
-                <div className="flex items-center justify-between flex-wrap gap-2">
-                  <div className="flex items-center gap-2.5">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary shrink-0">
-                      <Activity className="h-5 w-5" />
+
+          {selectedEntries.length === 0 ? (
+            <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed py-12 text-center">
+              <ListChecks className="h-10 w-10 text-muted-foreground/40 mb-3" />
+              <p className="text-sm text-muted-foreground">No check-ins on this date</p>
+              <p className="text-xs text-muted-foreground/70 mt-1">Pick a dotted day to view its check-ins.</p>
+            </div>
+          ) : (
+            <div className="grid gap-4">
+              {selectedEntries.map((p) => (
+                <div key={p.id} className="rounded-xl border bg-card p-4 shadow-sm hover:shadow-md transition-shadow space-y-4">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <div className="flex items-center gap-2.5">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary shrink-0">
+                        <Activity className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-sm leading-snug">{p.conditionName}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">Condition</p>
+                      </div>
+                      <StatusBadge status={p.conditionStatus} />
                     </div>
-                    <div>
-                      <p className="font-semibold text-sm leading-snug">{p.conditionName}</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">Condition</p>
-                    </div>
-                    <StatusBadge status={p.conditionStatus} />
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Badge variant="outline" className="text-xs font-semibold px-2.5 py-0.5 bg-muted">
-                      Follow-up: {p.followUpStatus || "N/A"}
-                    </Badge>
-                    {p.percentageRecovery !== null && p.percentageRecovery !== undefined && (
-                      <Badge className="text-xs font-bold bg-emerald-500/15 text-emerald-700 border-emerald-500/30 hover:bg-emerald-500/15">
-                        Recovery: {p.percentageRecovery}%
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className="text-xs font-semibold px-2.5 py-0.5 bg-muted">
+                        Follow-up: {p.followUpStatus || "N/A"}
                       </Badge>
-                    )}
-                  </div>
-                </div>
-
-                {p.description && (
-                  <div className="bg-muted/30 p-3 rounded-lg border text-sm text-muted-foreground italic">
-                    &ldquo;{p.description}&rdquo;
-                  </div>
-                )}
-
-                {p.questions && p.questions.length > 0 ? (
-                  <div className="space-y-2">
-                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Check-in Responses</p>
-                    <div className="grid gap-2 sm:grid-cols-2">
-                      {p.questions.map((q: any, qIdx: number) => {
-                        const answerObj = Array.isArray(p.answer)
-                          ? p.answer.find((a: any) => a.question === q.question)
-                          : null
-                        const answerVal = answerObj ? answerObj.answer : undefined
-                        return (
-                          <div key={qIdx} className="text-xs flex flex-col gap-1 bg-muted/20 p-3 rounded-xl border border-dashed">
-                            <span className="font-medium text-muted-foreground">Question: {q.question}</span>
-                            <div className="flex items-center gap-1.5 mt-0.5">
-                              <span className="font-semibold">Response:</span>
-                              {q.isText ? (
-                                <span className="text-foreground">{answerVal || "—"}</span>
-                              ) : (
-                                <Badge variant="secondary" className="text-[10px] py-0 px-1 bg-primary/10 text-primary border-primary/20">
-                                  {answerVal || "—"}
-                                </Badge>
-                              )}
-                            </div>
-                          </div>
-                        )
-                      })}
+                      {p.percentageRecovery !== null && p.percentageRecovery !== undefined && (
+                        <Badge className="text-xs font-bold bg-emerald-500/15 text-emerald-700 border-emerald-500/30 hover:bg-emerald-500/15">
+                          Recovery: {p.percentageRecovery}%
+                        </Badge>
+                      )}
                     </div>
                   </div>
-                ) : (
-                  <p className="text-xs text-muted-foreground italic pl-1">No checklist questions answered for this check-in.</p>
-                )}
-              </div>
-            ))}
+
+                  {p.description && (
+                    <div className="bg-muted/30 p-3 rounded-lg border text-sm text-muted-foreground italic">
+                      &ldquo;{p.description}&rdquo;
+                    </div>
+                  )}
+
+                  {p.questions && p.questions.length > 0 ? (
+                    <div className="space-y-2">
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Check-in Responses</p>
+                      <div className="grid gap-2 sm:grid-cols-2">
+                        {p.questions.map((q, qIdx) => {
+                          const answerObj = Array.isArray(p.answer)
+                            ? p.answer.find((a) => a.question === q.question)
+                            : null
+                          const answerVal = answerObj ? answerObj.answer : undefined
+                          return (
+                            <div key={qIdx} className="text-xs flex flex-col gap-1 bg-muted/20 p-3 rounded-xl border border-dashed">
+                              <span className="font-medium text-muted-foreground">Question: {q.question}</span>
+                              <div className="flex items-center gap-1.5 mt-0.5">
+                                <span className="font-semibold">Response:</span>
+                                {q.isText ? (
+                                  <span className="text-foreground">{formatCallDataValue(answerVal)}</span>
+                                ) : (
+                                  <Badge variant="secondary" className="text-[10px] py-0 px-1 bg-primary/10 text-primary border-primary/20">
+                                    {formatCallDataValue(answerVal)}
+                                  </Badge>
+                                )}
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-xs text-muted-foreground italic pl-1">No checklist questions answered for this check-in.</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="call-summary" className="mt-4 space-y-3">
+          <div className="flex items-center gap-2 flex-wrap">
+            <CalendarIcon2 className="h-4 w-4 text-primary" />
+            <h4 className="font-semibold">
+              {selectedDate ? format(selectedDate, "EEEE, dd MMM yyyy") : "Select a date"}
+            </h4>
+            {selectedEntries.length > 0 && (
+              <Badge variant="secondary" className="text-xs">
+                {selectedEntries.length} check-in{selectedEntries.length > 1 ? "s" : ""}
+              </Badge>
+            )}
           </div>
-        )}
-      </div>
+
+          {selectedEntries.length === 0 ? (
+            <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed py-12 text-center">
+              <Phone className="mb-3 h-10 w-10 text-muted-foreground/50" />
+              <p className="text-sm text-muted-foreground">No call summaries on this date</p>
+              <p className="text-xs text-muted-foreground/70 mt-1">Pick a dotted day to view its call details.</p>
+            </div>
+          ) : !hasCallData ? (
+            <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed py-12 text-center">
+              <Phone className="mb-3 h-10 w-10 text-muted-foreground/50" />
+              <p className="text-sm text-muted-foreground">No call details recorded for this date</p>
+              <p className="text-xs text-muted-foreground/70 mt-1">An admin can add them to the corresponding progress entry.</p>
+            </div>
+          ) : (
+            <div className="grid gap-4">
+              {selectedCallEntries.map(({ entry, callData }) => (
+                <div key={entry.id} className="rounded-xl border bg-card p-4 shadow-sm space-y-4">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <div className="flex items-center gap-2.5">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary shrink-0">
+                        <Phone className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-sm leading-snug">{entry.conditionName}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">Follow-up call</p>
+                      </div>
+                      <StatusBadge status={entry.conditionStatus} />
+                    </div>
+                    <Badge variant="outline" className="text-xs font-semibold px-2.5 py-0.5 bg-muted">
+                      Follow-up: {entry.followUpStatus || "N/A"}
+                    </Badge>
+                  </div>
+
+                  {callData.summary ? (
+                    <div className="space-y-1.5">
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Call summary</p>
+                      <p className="whitespace-pre-wrap break-words rounded-lg border bg-muted/30 p-3 text-sm leading-relaxed">
+                        {callData.summary}
+                      </p>
+                    </div>
+                  ) : (
+                    <p className="text-xs text-muted-foreground italic">No narrative call summary recorded for this check-in.</p>
+                  )}
+
+                  {callData.fields.length > 0 && (
+                    <div className="space-y-2">
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Additional data</p>
+                      <div className="grid gap-2 sm:grid-cols-2">
+                        {callData.fields.map(({ key, value }) => (
+                          <div key={key} className="min-w-0 rounded-lg border border-dashed bg-muted/20 p-3">
+                            <p className="text-xs font-medium text-muted-foreground break-words">{key}</p>
+                            <pre className="mt-1 whitespace-pre-wrap break-words font-sans text-sm text-foreground">
+                              {formatCallDataValue(value)}
+                            </pre>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
     </div>
   )
 }
@@ -1721,14 +1888,7 @@ export default function PatientsPage() {
                     <p className="text-sm text-muted-foreground">Scheduled follow-up check-ins and recovery tracking</p>
                   </div>
                 </div>
-                {progressCount === 0 ? (
-                  <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed py-12">
-                    <ListChecks className="h-10 w-10 text-muted-foreground/50 mb-3" />
-                    <p className="text-sm text-muted-foreground">No progress entries recorded yet</p>
-                  </div>
-                ) : (
-                  <ProgressCalendar conditions={conditions} />
-                )}
+                <ProgressCalendar conditions={conditions} />
               </TabsContent>
 
               {/* ────── MEDICAL HISTORY TAB ────── */}

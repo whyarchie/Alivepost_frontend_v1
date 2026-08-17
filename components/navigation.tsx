@@ -75,7 +75,7 @@ export function Navigation() {
 
         </Link>
 
-        <div className="hidden md:flex items-center gap-8">
+        <div className="hidden lg:flex items-center gap-8">
           {navLinks.map((item, i) => (
             <MotionLink
               key={item.label}
@@ -91,35 +91,47 @@ export function Navigation() {
             </MotionLink>
           ))}
         </div>
-          <Link href='/contact'>
-        <motion.button
-          className="hidden md:block bg-green-600 text-white px-6 py-2.5 rounded-full font-bold text-sm tracking-wide relative overflow-hidden"
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          transition={{ type: "spring", stiffness: 400, damping: 17 }}
+
+        <div className="hidden lg:flex items-center gap-3">
+          <MotionLink
+            href="https://alivepost.com/login"
+            className="border border-green-600 text-green-700 dark:text-green-400 px-5 py-2.5 rounded-full font-bold text-sm tracking-wide transition-colors hover:bg-green-50 dark:hover:bg-green-950/40"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            transition={{ type: "spring", stiffness: 400, damping: 17 }}
           >
-          <motion.div
-            className="absolute inset-0 bg-white/30"
-            animate={{
-              boxShadow: [
-                "0 0 20px rgba(22,163,74,0.3)",
-                "0 0 40px rgba(22,163,74,0.6)",
-                "0 0 20px rgba(22,163,74,0.3)",
-              ],
-            }}
-            transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut" }}
-            />
-          <motion.div
-            className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full"
-            animate={{ x: ["-100%", "200%"] }}
-            transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY, repeatDelay: 3 }}
-            />
-          <span className="relative z-10">Book a Demo</span>
-        </motion.button>
-            </Link>
+            Hospital Login
+          </MotionLink>
+          <Link href="/contact">
+            <motion.button
+              className="bg-green-600 text-white px-6 py-2.5 rounded-full font-bold text-sm tracking-wide relative overflow-hidden"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              transition={{ type: "spring", stiffness: 400, damping: 17 }}
+            >
+              <motion.div
+                className="absolute inset-0 bg-white/30"
+                animate={{
+                  boxShadow: [
+                    "0 0 20px rgba(22,163,74,0.3)",
+                    "0 0 40px rgba(22,163,74,0.6)",
+                    "0 0 20px rgba(22,163,74,0.3)",
+                  ],
+                }}
+                transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut" }}
+              />
+              <motion.div
+                className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full"
+                animate={{ x: ["-100%", "200%"] }}
+                transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY, repeatDelay: 3 }}
+              />
+              <span className="relative z-10">Book a Demo</span>
+            </motion.button>
+          </Link>
+        </div>
 
         <motion.button
-          className="md:hidden p-2"
+          className="lg:hidden p-2"
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           whileTap={{ scale: 0.9 }}
         >
@@ -156,7 +168,7 @@ export function Navigation() {
             initial="hidden"
             animate="visible"
             exit="exit"
-            className="md:hidden bg-white/95 dark:bg-[#121212]/95 backdrop-blur-2xl saturate-150 border-t border-slate-200 dark:border-white/10 overflow-hidden shadow-lg"
+            className="lg:hidden bg-white/95 dark:bg-[#121212]/95 backdrop-blur-2xl saturate-150 border-t border-slate-200 dark:border-white/10 overflow-hidden shadow-lg"
           >
             <div className="px-6 py-4 space-y-4">
               {navLinks.map((item, i) => (
@@ -172,12 +184,22 @@ export function Navigation() {
                   {item.label}
                 </MotionLink>
               ))}
+              <MotionLink
+                href="https://alivepost.com/login"
+                onClick={() => setMobileMenuOpen(false)}
+                className="block w-full border border-green-600 text-green-700 dark:text-green-400 px-6 py-3 rounded-full font-bold text-sm tracking-wide text-center"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+              >
+                Hospital Login
+              </MotionLink>
               <Link href="/contact">
                 <motion.button
                   className="w-full bg-green-600 text-white px-6 py-3 rounded-full font-bold text-sm tracking-wide mt-4"
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3 }}
+                  transition={{ delay: 0.4 }}
                 >
                   Book a Demo
                 </motion.button>

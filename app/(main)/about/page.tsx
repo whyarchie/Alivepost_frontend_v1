@@ -48,25 +48,15 @@ const team = [
         image: "/team/abhishek.jpg",
     },
     {
-        name: "Anubhav Maurya",
-        role: "Co-founder",
-        image: "/team/anubhav.jpg",
-    },
-    {
         name: "Shivam Singh",
         role: "CTO",
-        image: "shivam.jpg",
-    },
-    {
-        name: "Kushal Jaiswal",
-        role: "Sales Lead",
-        image: "kushal.jpg",
-    },
+        image: "",
+    }
 ]
 
 const impactItems = [
     {
-        title: "10,000+ Patients Monitored",
+        title: "Patients Monitored",
         description: "Continuously tracked after discharge, reducing readmission rates by 30%.",
         header: (
             <div className="flex flex-1 w-full h-full min-h-[6rem] rounded-xl overflow-hidden relative">
@@ -204,7 +194,7 @@ export default function About() {
                         </p>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12 pl-4 pr-4">
+                    <div className="mx-auto grid max-w-3xl grid-cols-1 gap-8 px-4 sm:grid-cols-2 lg:gap-12">
                         {team.map((member, idx) => (
                             <motion.div
                                 key={member.name}

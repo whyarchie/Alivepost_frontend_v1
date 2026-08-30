@@ -278,7 +278,7 @@ export interface CreateConditionData {
   doctorId: number;
   status: "STABLE" | "CRITICAL" | "RECOVERED";
   startDate: string;
-  endDate?: string;
+  endDate: string;
 }
 
 // What the enrollment cost: days × perDayPatientCost (rupees/day) with half of
@@ -308,6 +308,39 @@ export async function createPatientCondition(
 
 export async function getPatientCondition(id: number) {
   return apiFetch(`/patient/condition/?id=${id}`);
+}
+
+export interface ExtendConditionData {
+  patientConditionId: number;
+  endDate: string;
+}
+
+export interface ConditionExtensionBilling {
+  addedDays: number;
+  perDayPatientCost: number;
+  totalCost: number;
+  charged: number;
+  balance: number;
+}
+
+export interface ExtendConditionResponse {
+  success: boolean;
+  data: {
+    id: number;
+    startDate: string;
+    previousEndDate: string | null;
+    endDate: string;
+    billing: ConditionExtensionBilling;
+  };
+}
+
+export async function extendPatientCondition(
+  data: ExtendConditionData
+): Promise<ExtendConditionResponse> {
+  return apiFetch("/patient/condition/extend", {
+    method: "PATCH",
+    body: JSON.stringify(data),
+  });
 }
 
 // ─── Condition Invoice / Recommendation Notes ──────────────────
@@ -533,5 +566,152 @@ export async function getHospitalAiOverview(): Promise<{ success: boolean; data:
   return apiFetch("/dashboard/ai-overview");
 }
 
+// ─── Condition Chat ────────────────────────────────────────────
+export type ChatSenderRole = "PATIENT" | "HOSPITAL";
 
+export interface ChatAttachment {
+  id: string;
+  fileName: string;
+  mimeType: "image/jpeg" | "image/png" | "image/webp" | "application/pdf";
+  byteSize: number;
+  downloadUrlEndpoint: string;
+}
+
+export interface ChatMessage {
+  id: number;
+  senderRole: ChatSenderRole;
+  senderId: number;
+  clientMessageId: string;
+  text: string | null;
+  attachment: ChatAttachment | null;
+  createdAt: string;
+  readAt: string | null;
+}
+
+export interface ChatThread {
+  id: number;
+  conditionId: number;
+  condition: {
+    id: number;
+    HospitalPatientId: string | null;
+    startDate: string;
+    endDate: string | null;
+    status: string;
+    patient: { id: number; name: string; mobileNumber: string };
+    hospital: { id: number; name: string };
+    disease: { id: number; name: string };
+  };
+  writable: boolean;
+  unreadCount: number;
+  lastActivityAt: string;
+  lastMessage: ChatMessage | null;
+}
+
+export interface ChatThreadsPage {
+  threads: ChatThread[];
+  nextCursor: number | null;
+}
+
+export interface ChatMessagesPage {
+  messages: ChatMessage[];
+  nextCursor: number | null;
+}
+
+export async function getChatThreads(cursor?: number, limit = 20) {
+  const query = new URLSearchParams({ limit: String(limit) });
+  if (cursor) query.set("cursor", String(cursor));
+  return apiFetch<{ success: boolean; data: ChatThreadsPage }>(`/chat/threads?${query}`);
+}
+
+export async function getChatMessages(
+  conditionId: number,
+  before?: number,
+  limit = 50,
+) {
+  const query = new URLSearchParams({ limit: String(limit) });
+  if (before) query.set("before", String(before));
+  return apiFetch<{ success: boolean; data: ChatMessagesPage }>(
+    `/chat/threads/${conditionId}/messages?${query}`,
+  );
+}
+
+export async function getChatSocketToken() {
+  return apiFetch<{
+    success: boolean;
+    data: { token: string; expiresInSeconds: number };
+  }>("/chat/socket-token");
+}
+
+export async function createChatAttachmentUpload(
+  conditionId: number,
+  file: File,
+) {
+  return apiFetch<{
+    success: boolean;
+    data: {
+      attachmentId: string;
+      uploadUrl: string;
+      expiresAt: string;
+      expiresInSeconds: number;
+      requiredHeaders: Record<string, string>;
+    };
+  }>(`/chat/threads/${conditionId}/attachments/presign`, {
+    method: "POST",
+    body: JSON.stringify({
+      fileName: file.name,
+      mimeType: file.type,
+      byteSize: file.size,
+    }),
+  });
+}
+
+export function putChatAttachment(
+  uploadUrl: string,
+  file: File,
+  requiredHeaders: Record<string, string>,
+  onProgress?: (percentage: number) => void,
+) {
+  return new Promise<void>((resolve, reject) => {
+    const request = new XMLHttpRequest();
+    request.open("PUT", uploadUrl);
+    Object.entries(requiredHeaders).forEach(([name, value]) =>
+      request.setRequestHeader(name, value),
+    );
+    request.upload.onprogress = (event) => {
+      if (event.lengthComputable) {
+        onProgress?.(Math.round((event.loaded / event.total) * 100));
+      }
+    };
+    request.onload = () => {
+      if (request.status >= 200 && request.status < 300) resolve();
+      else reject(new Error(`Attachment upload failed (${request.status})`));
+    };
+    request.onerror = () => reject(new Error("Attachment upload failed"));
+    request.send(file);
+  });
+}
+
+export async function sendChatMessage(
+  conditionId: number,
+  data: { clientMessageId: string; text?: string; attachmentId?: string },
+) {
+  return apiFetch<{ success: boolean; data: ChatMessage }>(
+    `/chat/threads/${conditionId}/messages`,
+    { method: "POST", body: JSON.stringify(data) },
+  );
+}
+
+export async function markChatRead(conditionId: number, messageId: number) {
+  return apiFetch(`/chat/threads/${conditionId}/read`, {
+    method: "POST",
+    body: JSON.stringify({ messageId }),
+  });
+}
+
+export async function getChatAttachmentUrl(attachmentId: string) {
+  return apiFetch<{
+    success: boolean;
+    data: { downloadUrl: string; expiresInSeconds: number };
+  }>(`/chat/attachments/${attachmentId}/download-url`);
+}
 

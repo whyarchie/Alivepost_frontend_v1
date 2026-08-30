@@ -13,7 +13,7 @@ import {
   Phone, Search, ArrowLeft, User, Heart, Droplets, Calendar as CalendarIcon2,
   Activity, Pill, Plus, Clock, Stethoscope, Building2, FileText,
   AlertCircle, CheckCircle2, Shield, Loader2, Check, X, ListChecks, Smartphone, Sparkles, Trash2,
-  Download, NotebookPen
+  Download, NotebookPen, CalendarPlus
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -29,7 +29,7 @@ import {
   DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog"
 import {
-  Form, FormControl, FormField, FormItem, FormLabel, FormMessage,
+  Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage,
 } from "@/components/ui/form"
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -63,10 +63,18 @@ import {
   getPatientSummary,
   hospitalDeletePatient,
   getHospitalMe,
+  extendPatientCondition,
   updateConditionRecommendation,
   type PatientSummary,
 } from "@/lib/api"
 import { downloadPatientInvoice } from "@/lib/invoice"
+import {
+  addUtcCalendarDays,
+  getPaidConditionWindow,
+  isDateInsidePaidWindow,
+  toUtcDateKey,
+  utcCalendarDaysBetween,
+} from "@/lib/condition-window"
 
 // ─── Zod Schemas ─────────────────────────────────────────────────
 
@@ -84,10 +92,15 @@ const medicalHistorySchema = z.object({
 const conditionSchema = z.object({
   hospitalPatientId: z.string().trim().min(1, "Hospital patient ID is required"),
   diseaseId: z.string().min(1, "Select a disease"),
-  status: z.enum(["STABLE", "CRITICAL", "RECOVERED"]),
+  status: z.enum(["STABLE", "CRITICAL", "RECOVERED"], {
+    required_error: "Select a status",
+  }),
   startDate: z.date({ required_error: "Start date is required" }),
-  endDate: z.date().optional(),
+  endDate: z.date({ required_error: "End date is required" }),
   doctorId: z.string().min(1, "Select a doctor"),
+}).refine((data) => data.endDate >= data.startDate, {
+  message: "End date cannot be before start date",
+  path: ["endDate"],
 })
 
 const medicineAssignSchema = z.object({
@@ -95,6 +108,10 @@ const medicineAssignSchema = z.object({
   quantity: z.string().min(1, "Enter quantity"),
   tillDate: z.date({ required_error: "Till date is required" }),
   timings: z.array(z.string().regex(/^(\d|[01]\d|2[0-3]):([0-5]\d)$/, "Invalid time (HH:mm)")).min(1, "Select at least one timing"),
+})
+
+const conditionExtensionSchema = z.object({
+  endDate: z.date({ required_error: "New end date is required" }),
 })
 
 const recommendationSchema = z.object({
@@ -140,21 +157,43 @@ function StatusBadge({ status }: { status: string }) {
   )
 }
 
-function DatePickerField({ field, label, placeholder }: { field: any; label: string; placeholder?: string }) {
-  // Format the Date object into a YYYY-MM-DD string for the native input
-  const dateValue = field.value ? format(new Date(field.value), "yyyy-MM-dd") : ""
+function DatePickerField({
+  field,
+  label,
+  required = false,
+  minDate,
+  maxDate,
+  description,
+}: {
+  field: any
+  label: string
+  required?: boolean
+  minDate?: string | Date | null
+  maxDate?: string | Date | null
+  description?: string
+}) {
+  // Native date inputs represent calendar days, so keep their value in the same
+  // UTC date-key format used by backend billing and validation.
+  const dateValue = toUtcDateKey(field.value) ?? ""
 
   return (
     <FormItem className="flex flex-col">
-      <FormLabel>{label}</FormLabel>
+      <FormLabel>
+        {label}{required && <span className="text-destructive"> *</span>}
+      </FormLabel>
       <FormControl>
         <Input
           type="date"
+          required={required}
+          aria-required={required}
+          min={toUtcDateKey(minDate) ?? undefined}
+          max={toUtcDateKey(maxDate) ?? undefined}
           value={dateValue}
           onChange={(e) => field.onChange(e.target.value ? new Date(e.target.value) : undefined)}
           className={cn("w-full", !field.value && "text-muted-foreground")}
         />
       </FormControl>
+      {description && <FormDescription>{description}</FormDescription>}
       <FormMessage />
     </FormItem>
   )
@@ -518,6 +557,8 @@ export default function PatientsPage() {
   const [historyDialogOpen, setHistoryDialogOpen] = useState(false)
   const [conditionDialogOpen, setConditionDialogOpen] = useState(false)
   const [medicineDialogOpen, setMedicineDialogOpen] = useState(false)
+  const [extensionDialogOpen, setExtensionDialogOpen] = useState(false)
+  const [extensionCondition, setExtensionCondition] = useState<any | null>(null)
   const [summaryDialogOpen, setSummaryDialogOpen] = useState(false)
   const [summaryData, setSummaryData] = useState<PatientSummary | null>(null)
   const [selectedConditionId, setSelectedConditionId] = useState<number | null>(null)
@@ -649,6 +690,11 @@ export default function PatientsPage() {
   })
 
   const patient = patientQuery.data?.data
+  const conditions = patient?.conditions || []
+  const selectedCondition = conditions.find(
+    (condition: any) => condition.id === selectedConditionId,
+  )
+  const selectedConditionWindow = getPaidConditionWindow(selectedCondition)
 
   const historyMutation = useMutation({
     mutationFn: (values: z.infer<typeof medicalHistorySchema>) =>
@@ -697,7 +743,7 @@ export default function PatientsPage() {
         doctorId: parseInt(values.doctorId),
         status: values.status,
         startDate: values.startDate.toISOString(),
-        endDate: values.endDate?.toISOString(),
+        endDate: values.endDate.toISOString(),
       }),
     onSuccess: (res) => {
       const billing = res?.data?.billing
@@ -715,6 +761,91 @@ export default function PatientsPage() {
       toast.error("Failed to add condition", { description: error.message })
     },
   })
+
+  // ── Paid Condition Extension Form ──────────────────────────
+  const extensionForm = useForm<z.infer<typeof conditionExtensionSchema>>({
+    resolver: zodResolver(conditionExtensionSchema),
+  })
+  const extensionEndDate = extensionForm.watch("endDate")
+  const extensionWindow = getPaidConditionWindow(extensionCondition)
+  const extensionMinimumDate = extensionWindow
+    ? addUtcCalendarDays(extensionWindow.end, 1)
+    : null
+  const extensionEndDateKey = toUtcDateKey(extensionEndDate)
+  const extensionAddedDays =
+    extensionWindow && extensionEndDateKey
+      ? utcCalendarDaysBetween(extensionWindow.end, extensionEndDateKey)
+      : null
+  const extensionPerDayCost = hospitalMeQuery.data?.data?.perDayPatientCost
+  const extensionTotalCost =
+    extensionAddedDays && extensionAddedDays > 0 && typeof extensionPerDayCost === "number"
+      ? extensionAddedDays * extensionPerDayCost
+      : null
+  const extensionUpfrontCost =
+    extensionTotalCost === null ? null : extensionTotalCost / 2
+  const extensionInsufficient =
+    extensionUpfrontCost !== null &&
+    extensionUpfrontCost * 100 > (hospitalMeQuery.data?.data?.balance ?? 0)
+
+  function openExtensionDialog(condition: any) {
+    const window = getPaidConditionWindow(condition)
+    const firstExtensionDay = window
+      ? addUtcCalendarDays(window.end, 1)
+      : null
+
+    setExtensionCondition(condition)
+    extensionForm.reset({
+      endDate: firstExtensionDay
+        ? new Date(`${firstExtensionDay}T00:00:00.000Z`)
+        : undefined,
+    })
+    setExtensionDialogOpen(true)
+  }
+
+  function handleExtensionDialogOpenChange(open: boolean) {
+    setExtensionDialogOpen(open)
+    if (!open) {
+      setExtensionCondition(null)
+      extensionForm.reset()
+    }
+  }
+
+  const extensionMutation = useMutation({
+    mutationFn: (values: z.infer<typeof conditionExtensionSchema>) =>
+      extendPatientCondition({
+        patientConditionId: extensionCondition!.id,
+        endDate: values.endDate.toISOString(),
+      }),
+    onSuccess: (res) => {
+      const billing = res.data.billing
+      toast.success("Condition extended", {
+        description: `Added ${billing.addedDays} day(s) and charged ₹${(billing.charged / 100).toLocaleString("en-IN")}. Wallet balance: ₹${(billing.balance / 100).toLocaleString("en-IN")}.`,
+      })
+      handleExtensionDialogOpenChange(false)
+      queryClient.invalidateQueries({ queryKey: ["patient-search-mobile", mobileNumber] })
+      queryClient.invalidateQueries({ queryKey: ["patient-list"] })
+      queryClient.invalidateQueries({ queryKey: ["hospital-me"] })
+    },
+    onError: (error: Error) => {
+      toast.error("Failed to extend condition", { description: error.message })
+    },
+  })
+
+  function handleExtensionSubmit(
+    values: z.infer<typeof conditionExtensionSchema>,
+  ) {
+    const newEndDate = toUtcDateKey(values.endDate)
+    if (!extensionWindow || !newEndDate || newEndDate <= extensionWindow.end) {
+      extensionForm.setError("endDate", {
+        message: extensionWindow
+          ? `Choose a date after ${extensionWindow.end}`
+          : "Condition has an invalid paid date window",
+      })
+      return
+    }
+
+    extensionMutation.mutate(values)
+  }
 
   // ── Medicine Assign Form ─────────────────────────────────
   const medicineForm = useForm<z.infer<typeof medicineAssignSchema>>({
@@ -750,6 +881,22 @@ export default function PatientsPage() {
       toast.error("Failed to assign medicine", { description: error.message })
     },
   })
+
+  function handleMedicineSubmit(values: z.infer<typeof medicineAssignSchema>) {
+    if (!selectedConditionWindow) {
+      toast.error("The selected condition has an invalid paid date window")
+      return
+    }
+
+    if (!isDateInsidePaidWindow(values.tillDate, selectedConditionWindow)) {
+      medicineForm.setError("tillDate", {
+        message: `Till date must be between ${selectedConditionWindow.start} and ${selectedConditionWindow.end}`,
+      })
+      return
+    }
+
+    assignMutation.mutate(values)
+  }
 
   // ── Recommendation / Invoice-notes Form ──────────────────
   const recommendationForm = useForm<z.infer<typeof recommendationSchema>>({
@@ -836,7 +983,6 @@ export default function PatientsPage() {
     },
   })
 
-  const conditions = patient?.conditions || []
   const medicalHistory = patient?.medicalHistory || []
   const medicinesCount = conditions.reduce((acc: number, c: any) => acc + (c.medicineAlloted?.length || 0), 0)
   const progressCount = conditions.reduce((acc: number, c: any) => acc + (c.patientProgress?.length || 0), 0)
@@ -1310,7 +1456,7 @@ export default function PatientsPage() {
                               <FormItem>
                                 <FormLabel>Hospital Patient ID <span className="text-destructive">*</span></FormLabel>
                                 <FormControl>
-                                  <Input placeholder="e.g. HOSP-12345" autoComplete="off" {...field} />
+                                  <Input placeholder="e.g. HOSP-12345" autoComplete="off" required {...field} />
                                 </FormControl>
                                 <FormMessage />
                               </FormItem>
@@ -1318,12 +1464,14 @@ export default function PatientsPage() {
                           />
                           <FormField control={conditionForm.control} name="diseaseId" render={({ field }) => (
                             <FormItem className="relative">
-                              <FormLabel>Disease</FormLabel>
+                              <FormLabel>Disease <span className="text-destructive">*</span></FormLabel>
                               <FormControl>
                                 <Input
                                   placeholder="Search disease..."
+                                  required
                                   value={diseaseSearch}
                                   onChange={(e) => {
+                                    field.onChange("")
                                     setDiseaseSearch(e.target.value)
                                     setDiseaseOpen(true)
                                   }}
@@ -1361,9 +1509,9 @@ export default function PatientsPage() {
                           )} />
                           <FormField control={conditionForm.control} name="status" render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Status</FormLabel>
-                              <Select onValueChange={field.onChange} value={field.value}>
-                                <FormControl><SelectTrigger><SelectValue placeholder="Select status" /></SelectTrigger></FormControl>
+                              <FormLabel>Status <span className="text-destructive">*</span></FormLabel>
+                              <Select onValueChange={field.onChange} value={field.value} required>
+                                <FormControl><SelectTrigger aria-required="true"><SelectValue placeholder="Select status" /></SelectTrigger></FormControl>
                                 <SelectContent>
                                   <SelectItem value="STABLE">Stable</SelectItem>
                                   <SelectItem value="CRITICAL">Critical</SelectItem>
@@ -1375,24 +1523,31 @@ export default function PatientsPage() {
                           )} />
                           <div className="grid grid-cols-2 gap-4">
                             <FormField control={conditionForm.control} name="startDate" render={({ field }) => (
-                              <DatePickerField field={field} label="Start Date" />
+                              <DatePickerField field={field} label="Start Date" required />
                             )} />
                             <FormField control={conditionForm.control} name="endDate" render={({ field }) => (
-                              <DatePickerField field={field} label="End Date" placeholder="Ongoing" />
+                              <DatePickerField
+                                field={field}
+                                label="End Date"
+                                required
+                                minDate={conditionForm.watch("startDate")}
+                              />
                             )} />
                           </div>
                           {(() => {
                             // Enrollment is billed per day (inclusive of start and end
-                            // date; no end date = 1 day) at the hospital's per-day cost;
-                            // half of the total is deducted from the wallet up front.
+                            // date) at the hospital's per-day cost; half of the total is
+                            // deducted from the wallet up front.
                             const hosp = hospitalMeQuery.data?.data
                             const start = conditionForm.watch("startDate")
-                            if (!hosp || !start) return null
                             const end = conditionForm.watch("endDate")
-                            const MS_PER_DAY = 24 * 60 * 60 * 1000
-                            const days = end
-                              ? Math.max(1, Math.floor((end.getTime() - start.getTime()) / MS_PER_DAY) + 1)
-                              : 1
+                            if (!hosp || !start || !end) return null
+                            const startKey = toUtcDateKey(start)
+                            const endKey = toUtcDateKey(end)
+                            if (!startKey || !endKey) return null
+                            const dayDifference = utcCalendarDaysBetween(startKey, endKey)
+                            if (dayDifference === null || dayDifference < 0) return null
+                            const days = dayDifference + 1
                             const cost = days * hosp.perDayPatientCost
                             const upfront = cost / 2
                             const insufficient = upfront * 100 > hosp.balance
@@ -1423,8 +1578,10 @@ export default function PatientsPage() {
                               <FormControl>
                                 <Input
                                   placeholder="Search doctor..."
+                                  required
                                   value={doctorSearch}
                                   onChange={(e) => {
+                                    field.onChange("")
                                     setDoctorSearch(e.target.value)
                                     setDoctorOpen(true)
                                   }}
@@ -1473,15 +1630,97 @@ export default function PatientsPage() {
                   </Dialog>
                 </div>
 
+                {/* Paid Condition Extension Dialog */}
+                <Dialog open={extensionDialogOpen} onOpenChange={handleExtensionDialogOpenChange}>
+                  <DialogContent className="sm:max-w-lg">
+                    <DialogHeader>
+                      <DialogTitle>Extend Paid Condition Window</DialogTitle>
+                      <DialogDescription>
+                        Add paid treatment days for {extensionCondition?.disease?.name || "this condition"} before scheduling later medicines or check-ins.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <Form {...extensionForm}>
+                      <form onSubmit={extensionForm.handleSubmit(handleExtensionSubmit)} className="space-y-4">
+                        {extensionWindow && (
+                          <div className="rounded-md border bg-muted/40 p-3 text-sm text-muted-foreground">
+                            Currently paid from <span className="font-medium text-foreground">{extensionWindow.start}</span>
+                            {" "}through <span className="font-medium text-foreground">{extensionWindow.end}</span>.
+                          </div>
+                        )}
+                        <FormField
+                          control={extensionForm.control}
+                          name="endDate"
+                          render={({ field }) => (
+                            <DatePickerField
+                              field={field}
+                              label="New End Date"
+                              required
+                              minDate={extensionMinimumDate}
+                              description="Only the additional calendar days are charged."
+                            />
+                          )}
+                        />
+                        {extensionAddedDays !== null &&
+                          extensionAddedDays > 0 &&
+                          typeof extensionPerDayCost === "number" &&
+                          extensionTotalCost !== null &&
+                          extensionUpfrontCost !== null && (
+                          <div className={cn(
+                            "rounded-md border p-3 text-sm",
+                            extensionInsufficient
+                              ? "border-destructive/50 bg-destructive/5 text-destructive"
+                              : "bg-muted/50 text-muted-foreground",
+                          )}>
+                            <p>
+                              Extension cost: {extensionAddedDays} day(s) × ₹{extensionPerDayCost.toLocaleString("en-IN")} ={" "}
+                              <span className="font-semibold">₹{extensionTotalCost.toLocaleString("en-IN")}</span>
+                              {" "}· 50% now:{" "}
+                              <span className="font-semibold">₹{extensionUpfrontCost.toLocaleString("en-IN")}</span>
+                            </p>
+                            <p className="mt-1 text-xs">
+                              {extensionInsufficient
+                                ? `Insufficient wallet balance (₹${((hospitalMeQuery.data?.data?.balance ?? 0) / 100).toLocaleString("en-IN")}). Top up before extending.`
+                                : `Current wallet balance: ₹${((hospitalMeQuery.data?.data?.balance ?? 0) / 100).toLocaleString("en-IN")}.`}
+                            </p>
+                          </div>
+                        )}
+                        <DialogFooter>
+                          <Button
+                            type="submit"
+                            className="w-full"
+                            disabled={
+                              extensionMutation.isPending ||
+                              hospitalMeQuery.isLoading ||
+                              !extensionAddedDays ||
+                              extensionAddedDays <= 0 ||
+                              extensionInsufficient
+                            }
+                          >
+                            {extensionMutation.isPending ? (
+                              <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Extending...</>
+                            ) : (
+                              <><CalendarPlus className="mr-2 h-4 w-4" /> Extend Condition</>
+                            )}
+                          </Button>
+                        </DialogFooter>
+                      </form>
+                    </Form>
+                  </DialogContent>
+                </Dialog>
+
                 {/* Medicine Assign Dialog */}
                 <Dialog open={medicineDialogOpen} onOpenChange={(open) => { setMedicineDialogOpen(open); if (!open) setSelectedConditionId(null) }}>
                   <DialogContent className="sm:max-w-lg">
                     <DialogHeader>
                       <DialogTitle>Assign Medicine</DialogTitle>
-                      <DialogDescription>Prescribe medicine for this condition.</DialogDescription>
+                      <DialogDescription>
+                        {selectedConditionWindow
+                          ? `Prescribe medicine within the paid window ${selectedConditionWindow.start} to ${selectedConditionWindow.end}.`
+                          : "Prescribe medicine for this condition."}
+                      </DialogDescription>
                     </DialogHeader>
                     <Form {...medicineForm}>
-                      <form onSubmit={medicineForm.handleSubmit((v) => assignMutation.mutate(v))} className="space-y-4">
+                      <form onSubmit={medicineForm.handleSubmit(handleMedicineSubmit)} className="space-y-4">
                         <FormField control={medicineForm.control} name="medicineId" render={({ field }) => (
                           <FormItem className="relative">
                             <FormLabel>Medicine</FormLabel>
@@ -1534,7 +1773,18 @@ export default function PatientsPage() {
                             </FormItem>
                           )} />
                           <FormField control={medicineForm.control} name="tillDate" render={({ field }) => (
-                            <DatePickerField field={field} label="Till Date" />
+                            <DatePickerField
+                              field={field}
+                              label="Till Date"
+                              required
+                              minDate={selectedConditionWindow?.start}
+                              maxDate={selectedConditionWindow?.end}
+                              description={
+                                selectedConditionWindow
+                                  ? `Must be between ${selectedConditionWindow.start} and ${selectedConditionWindow.end}.`
+                                  : undefined
+                              }
+                            />
                           )} />
                         </div>
                         <FormField control={medicineForm.control} name="timings" render={({ field }) => {
@@ -1620,7 +1870,7 @@ export default function PatientsPage() {
                           )
                         }} />
                         <DialogFooter>
-                          <Button type="submit" className="w-full" disabled={assignMutation.isPending}>
+                          <Button type="submit" className="w-full" disabled={assignMutation.isPending || !selectedConditionWindow}>
                             {assignMutation.isPending ? (
                               <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Assigning...</>
                             ) : "Assign Medicine"}
@@ -1718,7 +1968,7 @@ export default function PatientsPage() {
                               </span>
                             </div>
                           </div>
-                          <div className="flex items-center gap-2">
+                          <div className="flex flex-wrap items-center justify-end gap-2">
                             <Button
                               size="sm"
                               variant="outline"
@@ -1728,6 +1978,14 @@ export default function PatientsPage() {
                               <Link href={`/dashboard/create-progress?mobile=${patient.mobileNumber}&conditionId=${c.id}`}>
                                 <ListChecks className="h-4 w-4" /> Add Question
                               </Link>
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="gap-1.5 shrink-0"
+                              onClick={() => openExtensionDialog(c)}
+                            >
+                              <CalendarPlus className="h-4 w-4" /> Extend
                             </Button>
                             <Button
                               size="sm"
@@ -1966,7 +2224,7 @@ export default function PatientsPage() {
                               <DatePickerField field={field} label="Start Date" />
                             )} />
                             <FormField control={historyForm.control} name="endDate" render={({ field }) => (
-                              <DatePickerField field={field} label="End Date" placeholder="Ongoing" />
+                              <DatePickerField field={field} label="End Date" />
                             )} />
                           </div>
                           <DialogFooter>

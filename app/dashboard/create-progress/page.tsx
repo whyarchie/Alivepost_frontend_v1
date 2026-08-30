@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { motion, AnimatePresence } from "framer-motion"
-import { format, addDays } from "date-fns"
+import { format } from "date-fns"
 import {
     Phone, Search, ArrowLeft, Plus, Trash2, Loader2, Save, Send, AlertCircle
 } from "lucide-react"
@@ -18,6 +18,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox"
 import { toast } from "sonner"
 import { searchPatientByMobile, createPatientProgress } from "@/lib/api"
+import {
+    addUtcCalendarDays,
+    clampDateToPaidWindow,
+    getPaidConditionWindow,
+    utcCalendarDaysBetween,
+} from "@/lib/condition-window"
 
 
 
@@ -66,24 +72,26 @@ function CreateProgressContent() {
     // Derived end-date (startDate + freq*(occ-1) days). Stored as a controlled string
     // so the user can also pick an end date and we back-calculate occurrences.
     const computedEndDate = (() => {
-        const freq = parseInt(frequency)
-        const occ = parseInt(occurrences)
-        if (!startDate || !Number.isFinite(freq) || freq <= 0 || !Number.isFinite(occ) || occ <= 0) return ""
-        const start = new Date(startDate)
-        if (isNaN(start.getTime())) return ""
-        return format(addDays(start, freq * (occ - 1)), "yyyy-MM-dd")
+        const freq = Number(frequency)
+        const occ = Number(occurrences)
+        if (!startDate || !Number.isInteger(freq) || freq <= 0 || !Number.isInteger(occ) || occ <= 0) return ""
+        return addUtcCalendarDays(startDate, freq * (occ - 1)) ?? ""
     })()
 
     const handleEndDateChange = (val: string) => {
         if (!val || !startDate) return
-        const start = new Date(startDate)
-        const end = new Date(val)
-        const freq = parseInt(frequency)
-        if (isNaN(start.getTime()) || isNaN(end.getTime()) || !Number.isFinite(freq) || freq <= 0) return
-        const diffDays = Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24))
-        if (diffDays < 0) return
+        const freq = Number(frequency)
+        if (!Number.isInteger(freq) || freq <= 0) return
+        if (paidWindow && (val < paidWindow.start || val > paidWindow.end)) {
+            toast.error("End date is outside the paid condition window", {
+                description: `Choose a date from ${paidWindow.start} through ${paidWindow.end}, or extend the condition first.`,
+            })
+            return
+        }
+        const diffDays = utcCalendarDaysBetween(startDate, val)
+        if (diffDays === null || diffDays < 0) return
         const newOcc = Math.floor(diffDays / freq) + 1
-        setOccurrences(String(Math.max(1, newOcc)))
+        setOccurrences(String(Math.min(1000, Math.max(1, newOcc))))
     }
 
     // Questions builder state
@@ -95,6 +103,53 @@ function CreateProgressContent() {
         queryFn: () => searchPatientByMobile(activeMobileSearch!),
         enabled: activeMobileSearch !== null,
     })
+
+    const patient = patientQuery.data?.data
+    const conditions = patient?.conditions || []
+    const selectedCondition = conditions.find(
+        (condition: any) => String(condition.id) === selectedConditionId,
+    )
+    const paidWindow = getPaidConditionWindow(selectedCondition)
+    const paidStartDate = paidWindow?.start
+    const paidEndDate = paidWindow?.end
+
+    useEffect(() => {
+        if (!paidStartDate || !paidEndDate) return
+        setStartDate((current) => clampDateToPaidWindow(current, {
+            start: paidStartDate,
+            end: paidEndDate,
+        }))
+    }, [paidStartDate, paidEndDate])
+
+    useEffect(() => {
+        if (!paidEndDate || !startDate) return
+
+        const freq = Number(frequency)
+        const availableDays = utcCalendarDaysBetween(startDate, paidEndDate)
+        if (!Number.isInteger(freq) || freq <= 0 || availableDays === null || availableDays < 0) {
+            return
+        }
+
+        const maximumOccurrences = Math.min(
+            1000,
+            Math.floor(availableDays / freq) + 1,
+        )
+        setOccurrences((current) => {
+            const parsed = Number(current)
+            return !Number.isInteger(parsed) || parsed <= 0 || parsed > maximumOccurrences
+                ? String(maximumOccurrences)
+                : current
+        })
+    }, [paidEndDate, startDate, frequency])
+
+    const scheduleOutsidePaidWindow = Boolean(
+        paidWindow && (
+            !computedEndDate ||
+            startDate < paidWindow.start ||
+            startDate > paidWindow.end ||
+            computedEndDate > paidWindow.end
+        ),
+    )
 
     // Watch for patient changes, and if we have initialConditionId set it
     useEffect(() => {
@@ -117,10 +172,10 @@ function CreateProgressContent() {
 
             return createPatientProgress({
                 patientConditionId: parseInt(selectedConditionId),
-                frequency: parseInt(frequency),
-                totalOccurrences: parseInt(occurrences),
+                frequency: Number(frequency),
+                totalOccurrences: Number(occurrences),
                 questions: mappedQuestions,
-                startDate: new Date(startDate).toISOString(),
+                startDate: new Date(`${startDate}T00:00:00.000Z`).toISOString(),
             })
         },
         onSuccess: () => {
@@ -218,8 +273,27 @@ function CreateProgressContent() {
             toast.error("Please select a patient condition")
             return
         }
-        if (!startDate || parseInt(frequency) <= 0 || parseInt(occurrences) <= 0) {
+        const parsedFrequency = Number(frequency)
+        const parsedOccurrences = Number(occurrences)
+        if (
+            !startDate ||
+            !Number.isInteger(parsedFrequency) ||
+            parsedFrequency <= 0 ||
+            !Number.isInteger(parsedOccurrences) ||
+            parsedOccurrences <= 0 ||
+            parsedOccurrences > 1000
+        ) {
             toast.error("Please fill valid tracking settings")
+            return
+        }
+        if (!paidWindow) {
+            toast.error("The selected condition does not have a valid paid date window")
+            return
+        }
+        if (scheduleOutsidePaidWindow) {
+            toast.error("Progress schedule exceeds the paid condition window", {
+                description: `Schedule within ${paidWindow.start} to ${paidWindow.end}, or extend the condition first.`,
+            })
             return
         }
         if (questions.length === 0) {
@@ -240,9 +314,6 @@ function CreateProgressContent() {
 
         progressMutation.mutate()
     }
-
-    const patient = patientQuery.data?.data
-    const conditions = patient?.conditions || []
 
     return (
         <div className="flex flex-1 flex-col p-4 md:p-6 lg:p-8 w-full max-w-5xl mx-auto">
@@ -337,7 +408,7 @@ function CreateProgressContent() {
                                                 {conditions.length === 0 && <SelectItem value="none" disabled>No active conditions found</SelectItem>}
                                                 {conditions.map((c: any) => (
                                                     <SelectItem key={c.id} value={String(c.id)}>
-                                                        {c.disease?.name} (Started {format(new Date(c.startDate), "MMM d")}) - {c.status}
+                                                        {c.disease?.name} (paid through {getPaidConditionWindow(c)?.end ?? "unknown"}) - {c.status}
                                                     </SelectItem>
                                                 ))}
                                             </SelectContent>
@@ -357,7 +428,14 @@ function CreateProgressContent() {
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="space-y-2">
                                             <Label>Start Date</Label>
-                                            <Input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} />
+                                            <Input
+                                                type="date"
+                                                value={startDate}
+                                                min={paidWindow?.start}
+                                                max={paidWindow?.end}
+                                                onChange={e => setStartDate(e.target.value)}
+                                                disabled={!paidWindow}
+                                            />
                                         </div>
                                         <div className="space-y-2">
                                             <Label>End Date</Label>
@@ -365,27 +443,31 @@ function CreateProgressContent() {
                                                 type="date"
                                                 value={computedEndDate}
                                                 min={startDate}
+                                                max={paidWindow?.end}
                                                 onChange={e => handleEndDateChange(e.target.value)}
+                                                disabled={!paidWindow}
                                             />
                                         </div>
                                         <div className="space-y-2 col-span-2">
                                             <Label>Repeat Every</Label>
                                             <div className="relative">
-                                                <Input type="number" min="1" value={frequency} onChange={e => setFrequency(e.target.value)} className="pr-14" />
+                                                <Input type="number" min="1" step="1" value={frequency} onChange={e => setFrequency(e.target.value)} className="pr-14" />
                                                 <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">days</span>
                                             </div>
                                         </div>
                                         {(() => {
                                             // Plain-English recap so staff can see the exact schedule
                                             // they're building instead of decoding "frequency/occurrences".
-                                            const freq = parseInt(frequency)
-                                            const occ = parseInt(occurrences)
-                                            if (!startDate || !Number.isFinite(freq) || freq <= 0 || !Number.isFinite(occ) || occ <= 0) {
+                                            const freq = Number(frequency)
+                                            const occ = Number(occurrences)
+                                            if (!startDate || !Number.isInteger(freq) || freq <= 0 || !Number.isInteger(occ) || occ <= 0) {
                                                 return null
                                             }
-                                            const start = new Date(startDate)
+                                            const start = new Date(`${startDate}T00:00:00.000Z`)
                                             if (isNaN(start.getTime())) return null
-                                            const last = addDays(start, freq * (occ - 1))
+                                            const lastDateKey = addUtcCalendarDays(startDate, freq * (occ - 1))
+                                            if (!lastDateKey) return null
+                                            const last = new Date(`${lastDateKey}T00:00:00.000Z`)
                                             const countPhrase = `${occ} check-in${occ > 1 ? "s" : ""}`
                                             const everyPhrase = freq === 1 ? "one per day" : `one every ${freq} days`
                                             return (
@@ -396,6 +478,17 @@ function CreateProgressContent() {
                                                 </p>
                                             )
                                         })()}
+                                        {paidWindow && (
+                                            <p className="col-span-2 rounded-lg border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+                                                Paid condition window: <span className="font-medium text-foreground">{paidWindow.start} to {paidWindow.end}</span>.
+                                                {" "}To schedule later check-ins, extend the condition from the patient profile first.
+                                            </p>
+                                        )}
+                                        {scheduleOutsidePaidWindow && (
+                                            <p className="col-span-2 rounded-lg border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+                                                This schedule exceeds the paid condition end date. Reduce the schedule or extend the condition.
+                                            </p>
+                                        )}
                                     </div>
                                 </CardContent>
                             </Card>
@@ -490,7 +583,7 @@ function CreateProgressContent() {
                             </CardContent>
                             <CardFooter className="bg-primary/5 border-t px-6 py-4 flex items-center justify-between">
                                 <p className="text-sm text-muted-foreground italic">Review your configuration carefully before deploying to patient.</p>
-                                <Button onClick={handleSubmit} size="lg" className="min-w-32 gap-2 shadow-sm font-semibold" disabled={progressMutation.isPending}>
+                                <Button onClick={handleSubmit} size="lg" className="min-w-32 gap-2 shadow-sm font-semibold" disabled={progressMutation.isPending || !paidWindow || scheduleOutsidePaidWindow}>
                                     {progressMutation.isPending ? <><Loader2 className="h-4 w-4 animate-spin" /> Scheduling...</> : <><Send className="h-4 w-4" /> Schedule Check-ins</>}
                                 </Button>
                             </CardFooter>

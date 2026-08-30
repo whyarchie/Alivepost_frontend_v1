@@ -21,12 +21,13 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import { Pill, User, Stethoscope, UserRoundPlus, Microscope, Building2, FileQuestion, Wallet } from "lucide-react"
+import { Pill, User, Stethoscope, UserRoundPlus, Microscope, Building2, FileQuestion, Wallet, MessagesSquare } from "lucide-react"
 
 const navMain = [
   { title: "Dashboard", url: "/dashboard", icon: IconDashboard },
   { title: "Create Patient", url: "/dashboard/create-patient", icon: UserRoundPlus },
   { title: "Patients", url: "/dashboard/patients", icon: User },
+  { title: "Messages", url: "/dashboard/messages", icon: MessagesSquare },
   { title: "Doctors", url: "/dashboard/doctors", icon: Stethoscope },
   { title: "Medications", url: "/dashboard/medications", icon: Pill },
   { title: "Diseases", url: "/dashboard/diseases", icon: Microscope },
